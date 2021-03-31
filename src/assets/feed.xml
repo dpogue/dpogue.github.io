@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>dpogue</title>
+    <link>https://dpogue.ca</link>
+    <description>darryl@dpogue.ca</description>
+    <atom:link href="http://dpogue.ca/feed.xml" rel="self" type="application/rss+xml" />
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <item>
+        <title>Cordova builds with Xcode 8</title>
+        <description><![CDATA[<p><small>Posted on <time pubdate datetime="2016-09-14">September 14<sup>th</sup>, 2016</time> &bull; Updated on <time datetime="2016-09-23">September 23<sup>rd</sup>, 2016</time></small></p>
+<p>With iOS 10 comes a new Xcode version, and with a new Xcode version comes new and unexpected provisioning profile and code signing issues.  The good news is that Xcode 8 brings better support for handling multiple developer teams, and can largely handle provisioning profiles automatically.  The bad news is that <a href="https://cordova.apache.org/">Apache Cordova</a> (and related tools like <a href="http://phonegap.com/">Adobe PhoneGap</a>) won&#39;t be able to make command-line release builds out of the box.</p>
+<h2>Xcode 8 Automatic Provisioning</h2><p>I&#39;ll start with this: if you want all the details about how code signing has changed in Xcode 8, you cannot do better than <a href="https://pewpewthespells.com/blog/migrating_code_signing.html#signing-in-xcode-8">this very thorough explanation</a>.</p>
+<p>If you&#39;re looking for a summary:</p>
+<ul>
+<li>There is now a <code>DEVELOPMENT_TEAM</code> setting to specify the Apple Developer Team ID</li>
+<li>The <code>CODE_SIGN_IDENTITY</code> setting should be a generic <kbd>&quot;iPhone Developer&quot;</kbd> identity (with no additional specificity)</li>
+<li>The <code>PROVISIONING_PROFILE</code> setting should no longer be used.</li>
+</ul>
+<h2>Cordova Support</h2><h3>Development Team</h3><p>The next release of Cordova-iOS <a href="https://issues.apache.org/jira/browse/CB-11845">will allow</a> specifying a <code>developmentTeam</code> in build.json, which will be used to populate the <code>DEVELOPMENT_TEAM</code> setting.</p>
+<p>If you&#39;re looking to take advantage of that in the meantime, I&#39;ve <a href="https://gist.github.com/dpogue/186b6c1827363c48d644b0d59e91bc28">written a hook</a> that you can add to your project. Save that file in your hooks folder, and reference it in your config.xml:</p>
+<pre><code class="language-xml">&lt;platform name=&quot;ios&quot;&gt;
+  &lt;hook type=&quot;before_compile&quot; src=&quot;hooks/xcode8.js&quot; /&gt;
+&lt;/platform&gt;
+</code></pre>
+<h3>Code Signing Identity</h3><p>The second problem is that Cordova will automatically try to use <kbd>&quot;iPhone Distribution&quot;</kbd> as the identity when making a build with the release option.  You can override this by specifying <kbd>&quot;iPhone Developer&quot;</kbd> in your build.json with the <code>codeSignIdentity</code> key.</p>
+<p>This is confusing, but you should always use the <kbd>&quot;iPhone Developer&quot;</kbd> identity, <strong>even when making release builds</strong>.</p>
+<p>Your updated build.json file should look something like this:</p>
+<pre><code class="language-json">{
+  &quot;ios&quot;: {
+    &quot;debug&quot;: {
+      &quot;developmentTeam&quot;: &quot;ABCD12345Z&quot;
+    },
+
+    &quot;release&quot;: {
+      &quot;developmentTeam&quot;: &quot;ABCD12345Z&quot;,
+      &quot;codeSignIdentity&quot;: &quot;iPhone Developer&quot;
+    }
+  }
+}
+</code></pre>
+<h3>Making a Distribution Build</h3><p>Now your release builds are succeeding, but they still aren&#39;t right because they&#39;re actually being signed with the development certificate.  In order to sign them with a distribution certificate, you&#39;ll need to perform an archive step in Xcode.</p>
+<p>Unfortunately <strong>this is a manual step</strong> in the Xcode IDE for now, but hopefully the next release of Cordova-iOS will be able to do this automatically.</p>
+<hr>
+<p>Special thanks to <a href="http://www.christian-cook.co.uk/">Christian</a> and <a href="https://shazronatadobe.wordpress.com/">Shazron</a> for their help in figuring out the required config bits.<br>An <em>enormous</em> thank you to <a href="https://pewpewthespells.com/">Samantha</a> for her amazing post about Xcode 8 code signing changes, and being the only document that made any sense.</p>
+]]></description>
+        <pubDate>Wed Sep 14 2016 01:00:00 GMT-0700 (PDT)</pubDate>
+        <link>https://dpogue.ca/articles/cordova-xcode8.html</link>
+        <guid isPermaLink="true">https://dpogue.ca/articles/cordova-xcode8.html</guid>
+      </item>
+    
+    
+    
+    
+      <item>
+        <title>Seymour: Cordova build helper</title>
+        <description><![CDATA[<p><small>Posted on <time pubdate datetime="2015-11-16">November 16<sup>th</sup>, 2015</time></small></p>
+<p>At <a href="http://ayogo.com">Ayogo Health</a>, our development process for <a href="https://cordova.apache.org/">Cordova</a> mobile apps includes a number of &quot;intermediate&quot; builds before the final version that will be released.  These range from local dev builds communicating with local dev servers, <abbr>QA</abbr> builds distributed internally communicating with a <abbr>QA</abbr> server, builds for user testing and feedback, staging builds to be shown to project clients the communicate with a staging server, ad-hoc builds for marketing and conference demonstrations, and finally the production builds that will be made available for public download.</p>
+<p>Managing all of these builds can be a bit challenging, mostly around ensuring that the right build is configured to communicate with the right server, and that they have different app <abbr>ID</abbr>s and app names so they don&#39;t conflict with one another.  We use <a href="https://jenkins-ci.org/">Jenkins</a> as a continuous integration environment and also as an automated build system.  For instance, our <abbr>QA</abbr> apps are rebuilt every time there a pull request is merged and the <abbr>QA</abbr> team is notified with a changelog.</p>
+<p>With Cordova, the app name and <abbr>ID</abbr> are set via a config.xml file in the root of the project.  One of the steps we have Jenkins perform is a handful of <code>sed</code> commands to manipulate those values.  Ultimately we end up with a scenario where each build job on Jenkins is running slightly different steps in slightly different orders.</p>
+<h2>Limitations</h2><p>For the most part, this system works well but when there&#39;s a problem, it quickly becomes a headache to track it down.  The builds from Jenkins are in release mode so they can&#39;t be debugged directly, and trying to make debug builds locally with the same config is fraught with accidental errors.  Often the quickest solution is to <abbr>SSH</abbr> into the Jenkins machine and manually make builds there, but this is far from an idea solution.</p>
+<p>After a particularly frustrating day making manual debug builds of a several instances of a project and adding Jenkins jobs for new instances, I wanted to simplify the process so that it was more reliable and easier to configure.</p>
+<p>I posted a wishlist in our developer channel on Slack:</p>
+<blockquote>
+<p>I&#39;d like a &quot;build cordova&quot; script based on environment variables and npm run commands:</p>
+<ul>
+<li><code>npm run buildapp</code> should do all the grunt build steps and invoke this script</li>
+<li>Debug/Release mode of the resulting app should be set via <code>AY_BUILD_MODE</code> env var</li>
+<li>App <abbr>ID</abbr> should have a default in config.xml, but can be overridden by <code>AY_APP_ID</code> env var</li>
+<li>App name should have a default in config.xml, but can be overridden by <code>AY_APP_NAME</code></li>
+</ul>
+<p>This will allow us to do matrix builds in Jenkins, generating both debug and release builds for a given commit</p>
+</blockquote>
+<h2>Introducing Seymour</h2><p><img class="img-center" width="481" src="/assets/images/seymour.png" alt=""></p>
+<p><a href="https://www.npmjs.com/package/seymour">Seymour</a> was the resulting build script.  It&#39;s a thin wrapper around the Cordova build commands that will do a little bit of pre-configuration.  At the moment, it supports changing the app <abbr>ID</abbr>, name, and version number, as well as controlling which platforms to build and whether to make a debug or release build.  All of these are configured by environment variables, which means our Jenkins jobs for different builds now have the same set of steps and the only variation is the environment.</p>
+<p>Effectively, Seymour will update your config.xml file values based on the environment variables, then run a <code>cordova prepare</code> which will restore all the platforms and plugins that have been installed to the project.  Finally it will run a <code>cordova build</code> command to compile the native projects.  In the future, it would ideally collect those builds and copy them into a top-level folder for easy finding.</p>
+<p>Seymour is available to install through <code>npm</code>, and the code is <a href="https://github.com/dpogue/seymour">available on GitHub</a> under the Apache 2.0 licence.  Please report any issues or feature requests.</p>
+<p>As a word of caution, Seymour is built on top of the recently released Cordova 5.4.0 which is known to have some issues.  Those should hopefully be fixed with a 5.4.1 release in the coming week.</p>
+]]></description>
+        <pubDate>Mon Nov 16 2015 00:00:00 GMT-0800 (PST)</pubDate>
+        <link>https://dpogue.ca/articles/seymour.html</link>
+        <guid isPermaLink="true">https://dpogue.ca/articles/seymour.html</guid>
+      </item>
+    
+    
+    
+    
+      <item>
+        <title>HTML5 Menus &amp; Browser Support</title>
+        <description><![CDATA[<p><small>Last Updated on <time itemprop="dateModified" datetime="2016-04-08">April 8<sup>th</sup>, 2016</time></small></p>
+<p>The <code>&lt;menu&gt;</code> tag has a bit of a troubled history. In <abbr>HTML3</abbr> it was essentially synonymous with <code>&lt;ul&gt;</code>.  It was deprecated in <abbr>HTML4</abbr>, but added back to the specification for <abbr>HTML5</abbr>.  Due to feedback from browser makers, it changed a bit between the publishing of the <abbr>W3C</abbr> <abbr>HTML5</abbr> spec and the continued work on the <abbr>WHATWG</abbr> <abbr>HTML5.1</abbr> spec.</p>
+<p>The purpose of the <code>&lt;menu&gt;</code> tag is to allow web applications to provide context menu actions that will be merged into the browser&#39;s native context menu.  This is something that has been implemented using JavaScript libraries for years, but the advantage of native support is that it doesn&#39;t prevent access to the existing browser menus.</p>
+<p>Support is a bit lacking at this point, but there&#39;s definite progress in a few browsers.  There are actually a few different pieces of menu-related support that we&#39;re interested in knowing about:</p>
+<ul>
+<li>Support for the basic <code>&lt;menu&gt;</code> tag (<code>type=&quot;toolbar&quot;</code>)</li>
+<li>Support for the popup <code>&lt;menu&gt;</code> tag (<code>type=&quot;context&quot;</code>)</li>
+<li>Support for the <code>&lt;menuitem&gt;</code> tag</li>
+<li>Support for the <code>contextmenu</code> attribute</li>
+<li>Support for the <code>&lt;button type=&quot;menu&quot;&gt;</code> tag</li>
+</ul>
+<p>If you&#39;re curious to know more, the rest of the post will explain the spec and how the <code>&lt;menu&gt;</code> tag can be used.  If you&#39;re just interested in knowing current browser support for the above features, here&#39;s the support matrix:</p>
+<div class="table-container">
+  <table>
+    <caption>Browser support for <abbr>HTML5</abbr> Menus</caption>
+    <thead>
+      <tr>
+        <td></td>
+        <th>Firefox</th>
+        <th>Chrome</th>
+        <th>Safari</th>
+        <th>Edge</th>
+        <th>Android Chrome</th>
+        <th>iOS Safari</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">toolbar menu</th>
+        <td style="background:#7B7102;color:white;">Partial</td>
+        <td style="background:#008812;color:white;">Yes (Flag)</td>
+        <td style="background:#7B7102;color:white;">Partial</td>
+        <td style="background:#7B7102;color:white;">Partial</td>
+        <td style="background:#008812;color:white;">Yes (Flag)</td>
+        <td style="background:#7B7102;color:white;">Partial</td>
+      </tr>
+      <tr>
+        <th scope="row">popup menu</th>
+        <td style="background:#008812;color:white;">Yes</td>
+        <td style="background:#008812;color:white;">Yes (Flag)</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#008812;color:white;">Yes (Flag)</td>
+        <td style="background:#C51700;color:white;">No</td>
+      </tr>
+      <tr>
+        <th scope="row">menuitem</th>
+        <td style="background:#7B7102;color:white;">Partial</td>
+        <td style="background:#008812;color:white;">Yes (Flag)</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#008812;color:white;">Yes (Flag)</td>
+        <td style="background:#C51700;color:white;">No</td>
+      </tr>
+      <tr>
+        <th scope="row">contextmenu</th>
+        <td style="background:#008812;color:white;">Yes</td>
+        <td style="background:#008812;color:white;">Yes (Flag)</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#7B7102;color:white;">Partial (Flag)</td>
+        <td style="background:#C51700;color:white;">No</td>
+      </tr>
+      <tr>
+        <th scope="row">button menu</th>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#C51700;color:white;">No</td>
+        <td style="background:#C51700;color:white;">No</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<blockquote>
+<p><strong>Note:</strong> Chrome support is limited to Chrome 48+ running with <code>--enable-blink-features=ContextMenu</code>.<br>Between Chrome 48 and 52, it was enabled behind the &quot;Experimental Web Platforms&quot; feature flag.</p>
+</blockquote>
+<h2>Making Sense of Menus</h2><figure>
+  <img class="img-center" src="/assets/images/menu-toolbar.png" alt="Toolbar menu">
+  <figcaption>A simple toolbar menu, as rendered in Chrome.</figcaption>
+</figure>
+
+<p>The most basic case of the <code>&lt;menu&gt;</code> tag is using it as it was used back in the <abbr>HTML3</abbr> days to provide a list of links.  Its children should be <code>&lt;li&gt;</code> list items with links or buttons inside.  This is the default type of menu, and is supported by all browsers.  In most cases, it looks identical to a <code>&lt;ul&gt;</code> list.</p>
+<p>In <abbr>HTML5</abbr>, the <code>&lt;menu&gt;</code> element has a <code>type</code> attribute that determines which type of menu is being defined.  The default value for <code>type</code> is <code>&quot;toolbar&quot;</code>, which preserves the list-like appearance from <abbr>HTML3</abbr>.</p>
+<blockquote>
+<p><strong>Note:</strong> Neither Chrome nor Firefox properly implement the default value for the <code>type</code> attribute on <code>&lt;menu&gt;</code> elements.<br>Chrome does not implement the <code>type</code> attribute at all unless the &quot;Experimental Web Platform Features&quot; flag is enabled.<br>Firefox returns an older (now incorrect) default value of <code>&quot;list&quot;</code> for the <code>type</code> attribute.</p>
+</blockquote>
+<p>A basic <a href="http://jsfiddle.net/dpogue/p4tn782n/">example</a> of sidebar link using <code>&lt;menu&gt;</code> might look something like this:</p>
+<pre><code class="language-html">&lt;menu type=&quot;toolbar&quot;&gt;
+    &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Home&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#&quot;&gt;About&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Contact&lt;/a&gt;&lt;/li&gt;
+&lt;/menu&gt;
+</code></pre>
+<h3>Making Use of HTML5</h3><figure>
+  <img class="img-center" src="/assets/images/menu-popup.png" alt="Context menu">
+  <figcaption>A simple popup context menu, as rendered in Chrome.</figcaption>
+</figure>
+
+<p>Beyond being compatible with <abbr>HTML3</abbr>, the <abbr>HTML5</abbr> <code>&lt;menu&gt;</code> tag is intended to add custom context actions to right-click/long-press popup menus in the browser.  To define a popup menu, you need to set the <code>type</code> attribute to <code>&quot;context&quot;</code>.</p>
+<p>Popup <code>&lt;menu&gt;</code> elements are intended to be combined with the global <code>contextmenu</code> attribute.  You can specify <code>contextmenu</code> on any element in your page and set its value to the <abbr>ID</abbr> of a <code>&lt;menu&gt;</code> in the same <abbr>DOM</abbr> hierarchy, and when the contextmenu event is triggered on that element it will show the specified <code>&lt;menu&gt;</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> Chrome on Android supports the <code>contextmenu</code> attribute, but does not enable long-press on the elements.  Therefore, you can only bring up the menu on a element that already has long-press support (like an <code>&lt;a&gt;</code> tag).</p>
+</blockquote>
+<p>As an example, this is how you might associate a menu with a <code>&lt;div&gt;</code>:</p>
+<pre><code class="language-html">&lt;div contextmenu=&quot;myMenu&quot;&gt;Right-click Me&lt;/div&gt;
+
+&lt;menu type=&quot;context&quot; id=&quot;myMenu&quot;&gt;
+&lt;/menu&gt;
+</code></pre>
+<p>Now this menu doesn&#39;t really accomplish much because it&#39;s empty.  To add actions to our menu, we need to use the <code>&lt;menuitem&gt;</code> tag.  This element is optionally self-closing (like <code>&lt;li&gt;</code> or <code>&lt;options&gt;</code>) and does not require a closing tag if it is followed by another <code>&lt;menuitem&gt;</code>, a <code>&lt;menu&gt;</code>, or the end tag of its parent element.</p>
+<blockquote>
+<p><strong>Note:</strong> Firefox doesn&#39;t treat <code>&lt;menuitem&gt;</code> as self-closing properly at the moment, so to be safe I&#39;d recommend including a closing tag.</p>
+</blockquote>
+<p>The <code>&lt;menuitem&gt;</code> tag is modelled after the <code>&lt;option&gt;</code> tag.  The first and most important attribute is <code>label</code>.  This is the text that you want to appear in your popup menu.  If no <code>label</code> attribute is specified, the text content of the element will be used as the label.</p>
+<p>The simplest menu item looks like this:</p>
+<pre><code class="language-html">&lt;menuitem label=&quot;Menu Item 1&quot;&gt;
+</code></pre>
+<p>Some other basic attributes for <code>&lt;menuitem&gt;</code> include:</p>
+<ul>
+<li><code>icon</code>: Adds an icon to the menu when the <code>icon</code> value is the URL of an image.</li>
+<li><code>disabled</code>: Visually disables and prevents clicking on the menu item.</li>
+<li><code>title</code>: Provides a hint describing the item action, which may be displayed as a tooltip.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Chrome doesn&#39;t support the <code>icon</code> attribute at the moment.<br>I don&#39;t think any browsers support the <code>title</code> attribute.</p>
+</blockquote>
+<p>Our <a href="http://jsfiddle.net/dpogue/fLjt62fn/">example</a> might now look something like this:</p>
+<pre><code class="language-html">&lt;div contextmenu=&quot;myMenu&quot;&gt;Right-Click Me&lt;/div&gt;
+&lt;menu type=&quot;context&quot; id=&quot;myMenu&quot;&gt;
+    &lt;menuitem label=&quot;Item 1&quot; title=&quot;The first menu item&quot;&gt;
+    &lt;menuitem label=&quot;Item 2&quot; title=&quot;The second menu item&quot; disabled&gt;
+&lt;/menu&gt;
+</code></pre>
+<h3>More complicated menu items</h3><figure>
+  <img class="img-center" src="/assets/images/menu-checked.png" alt="Complex context menu">
+  <figcaption>A context menu with checkbox items and separators.</figcaption>
+</figure>
+
+<p>Often menus are used by applications to present a quick way to enable or disable options, or to toggle between a few different options.  We can do that in <abbr>HTML</abbr> too by looking at some of the advanced attributes for the <code>&lt;menuitem&gt;</code> tag.</p>
+<p>For menu items that can be toggled on and off (like a checkbox), set the <code>type</code> attribute to <code>&quot;checkbox&quot;</code>.  You can specify if the item is checked by default using the <code>checked</code> attribute.</p>
+<p>For items that behave like a radio button group, set the <code>type</code> attribute to <code>&quot;radio&quot;</code>, and give all the items the same <code>radiogroup</code> value.  You can specify which item should be checked by default with the <code>checked</code> attribute.</p>
+<p>You can also group menu items by adding separators with an <code>&lt;hr&gt;</code> element.</p>
+<p>Our more complicated <a href="http://jsfiddle.net/dpogue/knduk0k3/">example</a> looks like this:</p>
+<pre><code class="language-html">&lt;menu type=&quot;context&quot; id=&quot;myMenu&quot;&gt;
+    &lt;menuitem type=&quot;checkbox&quot; label=&quot;Enable CSS&quot; checked&gt;
+    &lt;menuitem type=&quot;checkbox&quot; label=&quot;Enable JS&quot;&gt;
+    &lt;hr&gt;
+    &lt;menuitem type=&quot;radio&quot; radiogroup=&quot;img&quot; label=&quot;PNG&quot; checked&gt;
+    &lt;menuitem type=&quot;radio&quot; radiogroup=&quot;img&quot; label=&quot;JPEG&quot;&gt;
+    &lt;menuitem type=&quot;radio&quot; radiogroup=&quot;img&quot; label=&quot;GIF&quot;&gt;
+&lt;/menu&gt;
+</code></pre>
+<p>There&#39;s one more type of menu item, a <code>&quot;command&quot;</code> type that references another element in the page by <abbr>ID</abbr> and triggers it with a click event when the menu item is activated.</p>
+<pre><code class="language-html">&lt;button id=&quot;submitbutton&quot; type=&quot;submit&quot;&gt;Submit&lt;/button&gt;
+
+&lt;menu type=&quot;context&quot;&gt;
+    &lt;menuitem type=&quot;command&quot; command=&quot;submitbutton&quot; label=&quot;Submit&quot;&gt;
+&lt;/menu&gt;
+</code></pre>
+<h3>Nested Menus</h3><figure>
+  <img class="img-center" src="/assets/images/menu-nested.png" alt="Context submenu">
+  <figcaption>A context menu with a nested submenu.</figcaption>
+</figure>
+
+<p>You can create submenus by nesting <code>&lt;menu&gt;</code> elements within each other.  When creating a child menu, you must specify the <code>label</code> attribute on the child <code>&lt;menu&gt;</code>.  This label will be displayed as a menu item that opens the child menu.</p>
+<p><a href="http://jsfiddle.net/dpogue/9804txz7/">Example</a>:</p>
+<pre><code class="language-html">&lt;div contextmenu=&quot;myMenu&quot;&gt;Right-Click Me&lt;/div&gt;
+&lt;menu type=&quot;context&quot; id=&quot;myMenu&quot;&gt;
+    &lt;menu label=&quot;Child Menu&quot;&gt;
+        &lt;menuitem label=&quot;Child Item 1&quot;&gt;
+        &lt;menuitem label=&quot;Child Item 2&quot;&gt;
+    &lt;/menu&gt;
+&lt;/menu&gt;
+</code></pre>
+<h3>Opening Menus With Buttons</h3><p>Sadly, this feature is missing in all browsers at the moment, but it&#39;s one that will hopefully be picked up in the next year or so.</p>
+<p>The <abbr>HTML5</abbr> spec adds a new type of <code>&lt;button&gt;</code> for opening menus when activated.  If the button <code>type</code> attribute is <code>&quot;menu&quot;</code> and the <code>menu</code> attribute is the <abbr>ID</abbr> of a popup <code>&lt;menu&gt;</code> tag, clicking or tapping the button should open the menu.</p>
+<p>This is where the real value of menus can be used, combining a <code>&lt;menu type=&quot;toolbar&quot;&gt;</code> containing <code>&lt;button type=&quot;menu&quot;&gt;</code> elements with <code>&lt;menu type=&quot;context&quot;&gt;</code> elements to build a standard-style menu bar using only standards-based <abbr>HTML</abbr>.</p>
+<p>(Not working) <a href="http://jsfiddle.net/dpogue/o1ahjku7/">example</a>:</p>
+<pre><code class="language-html">&lt;button type=&quot;menu&quot; menu=&quot;myMenu&quot;&gt;Click Me&lt;/button&gt;
+
+&lt;menu type=&quot;context&quot; id=&quot;myMenu&quot;&gt;
+    &lt;menuitem label=&quot;Item 1&quot;&gt;
+    &lt;menuitem label=&quot;Item 2&quot;&gt;
+&lt;/menu&gt;
+</code></pre>
+<h2>Changelog</h2><ul>
+<li><strong><time datetime="2016-07-28">July 28<sup>th</sup>, 2016</time>:</strong> Updated to reflect Chrome moving the feature <a href="https://chromium.googlesource.com/chromium/src.git/+/990b0dfe5c98990f3a27e44a2a5e512f5ed3140d">behind more flags</a> in Chrome 52.</li>
+<li><strong><time datetime="2016-04-08">April 8<sup>th</sup>, 2016</time>:</strong> Updated to reflect the loosened <code>&lt;menuitem&gt;</code> text content rules.</li>
+<li><strong><time datetime="2016-01-25">January 25<sup>th</sup>, 2016</time>:</strong> Updated to reflect Chrome 48 support for <code>type=&quot;context&quot;</code>.</li>
+<li><strong><time datetime="2015-10-11">October 11<sup>th</sup>, 2015</time>:</strong> Updated to reflect that the spec has been changed from <code>type=&quot;popup&quot;</code> back to <code>type=&quot;context&quot;</code>.</li>
+<li><strong><time itemprop="datePublished" datetime="2015-03-04">March 4<sup>th</sup>, 2015</time>:</strong> Originally published.</li>
+</ul>
+]]></description>
+        <pubDate>Wed Mar 04 2015 00:00:00 GMT-0800 (PST)</pubDate>
+        <link>https://dpogue.ca/articles/html5-menu.html</link>
+        <guid isPermaLink="true">https://dpogue.ca/articles/html5-menu.html</guid>
+      </item>
+    
+    
+    
+    
+      <item>
+        <title>cordova-plugin-webp: WebP support for iOS</title>
+        <description><![CDATA[<p><small>Posted on <time pubdate datetime="2014-11-24">November 24<sup>th</sup>, 2014</time></small></p>
+<p>Google&#39;s WebP image format can produce some significant savings in image file sizes, particularly for images with transparency that previously required <abbr>PNG</abbr>.  WebP is supported natively in Google Chrome, and on Android 4.0 and higher (although 4.0 and 4.1 had some limitations).</p>
+<p>On mobile, the smaller file sizes mean less network bandwidth and faster image loading.  Several mobile websites are already using device detection to serve WebP images to supported browsers.  For hybrid apps, using WebP for assets means the application bundle is smaller.</p>
+<p>Unfortunately, iOS doesn&#39;t support WebP images.</p>
+<h2>Getting WebP working on iOS</h2><p>It&#39;s relatively easy to compile the WebP library for iOS and bundle it with your application.  Carson McDonald has <a href="https://github.com/carsonmcdonald/WebP-iOS-example">a script on GitHub</a> to compile libwebp for iOS and generate a WebP.framework file, as well as a <a href="http://www.ioncannon.net/programming/1483/using-webp-to-reduce-native-ios-app-size/">blog post</a> detailing how to use libwebp from Objective C.</p>
+<p>Using Objective C, you can feed a WebP image to the decoder and then feed the decoded image data into a <code>UIImage</code>.  That works reasonably well for native apps written entirely in Objective C, but doesn&#39;t work for apps that are trying to display WebP images in a web view.</p>
+<p>Luckily, iOS provides a way of registering <abbr>URL</abbr> interceptors.  These are most commonly used to implement custom <abbr>URL</abbr> protocols, but they can also be used to intercept requests based on a particular file extension.</p>
+<p>Scott Talbot proved it was possible to use a <abbr>URL</abbr> interceptor to decode WebP images for web views with his <a href="https://github.com/cysp/STWebPDecoder">STWebPDecoder project</a>.  He wrote a WebP decoder based on libwebp and an interceptor that will decode WebP images before feeding them back to the web view.</p>
+<h2>Automatic WebP support for Cordova</h2><p>Based on Scott Talbot&#39;s <abbr>URL</abbr> interceptor and decoder and using Carson McDonald&#39;s script to build WebP.framework, I&#39;ve put together a plugin for Apache Cordova that will automatically and transparently support WebP images in iOS <code>UIWebView</code>.</p>
+<p>The plugin source code is available at <a href="https://github.com/dpogue/cordova-plugin-webp">https://github.com/dpogue/cordova-plugin-webp</a></p>
+<p>You can add the plugin to your Cordova project using the command-line tools:<br><code>cordova plugin add ca.dpogue.webp</code></p>
+<p>Currently it uses libwebp 0.4.2, and has been tested and verified to work with a <code>UIWebView</code>.  It has not been tested with <code>WkWebView</code> on iOS 8.  If you find bugs, please report them <a href="https://github.com/dpogue/cordova-plugin-webp/issues/">on GitHub</a>.</p>
+]]></description>
+        <pubDate>Mon Nov 24 2014 00:00:00 GMT-0800 (PST)</pubDate>
+        <link>https://dpogue.ca/articles/webp-ios.html</link>
+        <guid isPermaLink="true">https://dpogue.ca/articles/webp-ios.html</guid>
+      </item>
+    
+    
+    
+    
+      <item>
+        <title>Native Navigation in the Mobile Web World</title>
+        <description><![CDATA[<p><small>Posted on <time pubdate datetime="2014-10-06">October 6<sup>th</sup>, 2014</time></small></p>
+<p>Much has been written on the subject of web-based mobile apps and how they
+compare to native apps.  Often there&#39;s a lot of unfair prejudice against web
+apps, but one point that consistently stands is related to navigation in web
+apps.  Although there are hundreds of libraries that claim to implement
+native-feeling navigation for the web, it&#39;s incredibly difficult to match user
+expectations about interaction, responsiveness, guesture support, and other
+default behaviours.  To complicate matters, these expectations can vary
+significantly from platform to platform, and version to version (iOS6 vs iOS7).</p>
+<p>The common tools for packaging web apps for mobile, such as Apache
+Cordova/Adobe Phonegap, don&#39;t offer much of a solution to this navigation
+problem.  Your application essentially consists of a full-screen web view that
+displays your web content, leaving you responsible for all app navigation
+controls.</p>
+<h2>37signals and the Hybrid approach</h2><p>There was a <a href="https://signalvnoise.com/posts/3743-hybrid-sweet-spot-native-navigation-web-content">post in early 2014</a> by DHH from 37signals about their
+Basecamp mobile app and how it combined web content with native navigation.
+This is where things start moving into so-called &quot;hybrid&quot; apps: a mix of web
+content and native controls.</p>
+<p>Several people took the 37signals blog as inspiration and looked for ways to
+build tools that would automatically generate native navigation controls based
+on website content.  A few examples:</p>
+<ul>
+<li><p><a href="https://gonative.io/">GoNative</a> parses a website for navigation menus, generates a JSON
+configuration file for them, and packages it up into an app that builds
+native menus from the JSON config.  Their Android and iOS app containers are
+open-source on GitHub, but the website parsing code is done as a service
+through the website.</p>
+</li>
+<li><p><a href="http://www.lokimeyburg.com/Stacker/">Stacker</a> for iOS uses URL parameters to update native controls in the
+title bar.  Websites are loaded in a web view, which intercepts URL
+navigation to update the native controls.  This allows the native controls to
+be controlled through the HTML dynamically, and by intercepting the requests
+before they are sent over the network there is no delay before the native
+controls update.  This makes the app feel more responsive.</p>
+</li>
+</ul>
+<p>These are good solutions for taking web content from a server and displaying it
+with native navigation controls, but in many cases web apps are built with
+client-side frameworks that run entirely client-side.  These are cases where
+Cordova/Phonegap is often the technology of choice because it will package up
+existing files and serve them locally on the mobile device.</p>
+<p>Another disadvantage to these solutions is that some of the customization has
+to happen in native code.  Ideally we could control the native navigation
+controls with the same ease and flexibility that we have with the HTML
+<code>&lt;title&gt;</code> tag.</p>
+<p>So how do we make native controls which are defined entirely by HTML?  Could
+these be defined in such a way that browsers can automatically generate native
+navigation controls for apps?</p>
+<h2>Imagining an Ideal Solution</h2><p>There is already one case where HTML can control an aspect of the native
+interface, through the <code>&lt;title&gt;</code> tag.  If you change the title in HTML via
+JavaScript, the browser updates the window automatically with the new title.
+One common feature of mobile navigation is a title bar displayed across the top
+of the screen, and it makes sense for the content of that title to reflect the
+title of the page in the web view.</p>
+<p>Another existing convention found in web browsers is the back button.  History
+on the web works like a stack, with each new page or state adding to the top of
+that stack, and the back button popping the most recent state off the top.
+With the <a href="https://html.spec.whatwg.org/multipage/browsers.html#the-history-interface">HTML5 History API</a>, we have <code>pushState()</code> and <code>replaceState()</code> to
+allow single-page applications to add to the history stack without page
+reloads.  Unfortunately, there is one key piece missing from the History API,
+which is the ability to remove pages from the history stack programmatically.
+It&#39;s somewhat understandable that we wouldn&#39;t want any website to be able to
+start removing entries from the history stack, but for web apps there are
+plenty of use cases.</p>
+<p>Imagine you have an app with a landing page, a signup page, and a logged-in
+dashboard.  Someone launches the app for the first time and sees the landing
+page, then clicks signup.  At this point, hitting back should take them to the
+landing page.  After signing up, they are redirected to the dashboard. Hitting
+back here shouldn&#39;t really do anything; it&#39;s definitely wrong to take them back
+to signup when they&#39;re already logged in.  If we used <code>replaceState()</code> when
+redirecting, hitting back on the dashboard would still take them back to the
+landing page which might also be undesirable.  Unfortunately, there&#39;s no
+JavaScript API (or even native web view API in most cases) for clearing the
+history stack.</p>
+<p>One part of the HTML5 spec that hasn&#39;t seen much adoption is <a href="http://www.w3.org/html/wg/drafts/html/master/interactive-elements.html#the-menu-element">the <code>&lt;menu&gt;</code>
+element</a>.  In HTML3 this was just treated like a list, and was
+removed from HTML4, but it&#39;s been added back in HTML5 along with a <code>&lt;menuitem&gt;</code>
+element to build native toolbar and context menus.  The idea is that web apps
+can define a menu with a unique ID containing items and submenus, and then
+refer to that menu by ID using the <code>contextmenu=&quot;&quot;</code> attribute.  When someone
+right-clicks on long-presses on the element, the browser should open a context
+menu with the items and submenus from the HTML.<br>At the time of writing (October 2014) only Firefox natively supports this, but
+there is ongoing work to implement this in Chrome.</p>
+<p>Custom context menus with the <code>&lt;menu&gt;</code> tag would give developers more ability
+to affect native interactions via HTML, but doesn&#39;t go quite far enough to
+provide everything that would be needed for native navigation.  In particular,
+the actual navigation part is still missing.  This is harder to solve, partly
+because of the disparate navigation controls across platforms and devices, and
+partly because there isn&#39;t a clear mapping to HTML.</p>
+<h3>Defining Navigation</h3><h4><code>&lt;nav&gt;</code> elements</h4><p>One possibility is to pull content from the <code>&lt;nav&gt;</code> element, but its contents
+are not required to be structured in any consistent way, and it doesn&#39;t have a
+tightly scoped use case.  The HTML5 spec essentially says to use <code>&lt;nav&gt;</code>
+anywhere that is &quot;a section with navigation links&quot;.  There are no restrictions
+on the number of <code>&lt;nav&gt;</code> elements on the page.  While it would be possible to
+make some guesses based on the structure of the navigation content, it&#39;s an
+ugly situation that should be avoided if possible.</p>
+<h4>Meta tags</h4><p>Navigation and primary page actions could be specified by custom meta tags,
+which is roughly the approach used by Internet Explorer for its <a href="http://msdn.microsoft.com/en-ca/library/ie/gg491725%28v=vs.85%29.aspx">pinned site
+jump lists</a>.  In a single-page application however, this isn&#39;t
+an ideal solution: meta tags are intended to apply to the document as a whole,
+and modifying them at runtime can be buggy.  Most client-side frameworks are
+also focussed on the page content in the body, and aren&#39;t set up to manage meta
+tags.</p>
+<h4>JavaScript</h4><p>Some mobile platforms have exposed JavaScript APIs for defining navigation
+menus, such as <a href="http://msdn.microsoft.com/en-us/library/windows/apps/hh700921.aspx">WinJS.UI.Menu</a> and <a href="http://developer.blackberry.com/bbos/html5/apis/blackberry.ui.menu.html">blackberry.ui.menu</a>.  These work well
+for their respective platforms, but there&#39;s no consistent API for
+multi-platform applications (which web apps often are).  It&#39;s also my belief
+that the navigation should be defined as part of the page structure, rather
+than manually constructed through JavaScript.  This allows for fallbacks in
+browsers that don&#39;t support generating native navigation elements.</p>
+<h4>Web Components</h4><p>Web components allow the creation of new custom elements with registration
+events and logic available through JavaScript.  Defining a new <code>&lt;native-menu&gt;</code>
+element would be easy, and using JavaScript could be mapped onto existing APIs
+like WinJS.UI.Menu or blackberry.ui.menu.  Ultimately it has the same issues as
+those JavaScript APIs in that the implementation would be platform-specific.
+The only benefit is that the navigation would be defined in the HTML.</p>
+<h4><code>&lt;menu type=&quot;toolbar&quot;&gt;</code> elements</h4><p>Finally we&#39;re left with the toolbar version of the <code>&lt;menu&gt;</code> tag.  The HTML5
+spec says that a menu of type toolbar should <code>&lt;li&gt;</code> elements or flow content.
+That gives us some degree of structure that can be parsed, but those <code>&lt;li&gt;</code>
+tags could still contain anything.  Although not explicitly stated in the spec,
+the toolbar type of the menu tag is essentially intended to behave like a
+<code>&lt;ul&gt;</code> tag for compatibility with HTML3.</p>
+<p>We could informally make some assumptions about what would be considered a
+valid menu.  The easy path would be to require <code>&lt;li&gt;</code> elements that contain a
+valid command type (as defined in the HTML5 spec, which is basically one of
+<code>&lt;a&gt;</code>, <code>&lt;button&gt;</code>, or <code>&lt;input&gt;</code>).  That would serve as a starting point, but
+there&#39;s really no way to enforce these informal guidelines.  There&#39;s also
+nothing preventing multiple menus from being declared in the page, which would
+lead to ambiguity when trying to parse and generate native components.  It
+might be reasonable to only build native navigation for a menu that is a direct
+child of the body, but that&#39;s just adding more unofficial rules to the mix.</p>
+<h2>The Path Forward</h2><p>Unfortunately there&#39;s no single clear solution to all of this that can work in
+browsers today, or that&#39;s even an official proposal for browsers tomorrow.
+I&#39;ve spoken informally to some browser developers about what sort of solution
+they envision, but it&#39;s a hard problem to describe and the brief answer has
+usually been to point to Web Components for custom elements.</p>
+<p>Some attempts have been made to make due with the <code>&lt;menu&gt;</code> tag, despite the
+open questions about how suitable it is.  One of the Cordova developers
+<a href="https://github.com/mwbrooks/cordova-plugin-menu/tree/5a13232dbeac867583f6ecbefd0b44f65c9816e2">started a plugin</a> in 2011 to act as a polyfill for native
+menus, and I am responsible for a <a href="https://github.com/dpogue/cordova-plugin-cambie">newer plugin</a> along the same lines.
+Ultimately these <em>can&#39;t</em> really be polyfills for native navigation if there&#39;s
+no clear guideline on what should be polyfilled and how it should behave.</p>
+<p>I would love to hear from browser developers, mobile OS developers, app
+developers, and hybrid platform developers what they envision as an ideal
+solution to this problem.  The web improves through discussion.</p>
+]]></description>
+        <pubDate>Mon Oct 06 2014 01:00:00 GMT-0700 (PDT)</pubDate>
+        <link>https://dpogue.ca/articles/nativenav.html</link>
+        <guid isPermaLink="true">https://dpogue.ca/articles/nativenav.html</guid>
+      </item>
+    
+    
+  </channel>
+</rss>

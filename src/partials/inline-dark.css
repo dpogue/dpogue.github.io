@@ -1,0 +1,10 @@
+article, section {
+    color: #cacace;
+    background: #24222a;
+    box-shadow: 0 0 1rem rgba(0, 0, 0, 0.25);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+a {
+    color: #f7ba84;
+}

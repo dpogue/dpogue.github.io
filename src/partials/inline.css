@@ -1,0 +1,86 @@
+@font-face {
+    font-family: dpogue;
+    font-display: fallback;
+    src: url(/fonts/dpogue.woff2) format("woff2"), url(/fonts/dpogue.woff) format("woff");
+}
+
+body {
+    color-scheme: light dark;
+    margin: 0;
+    padding: 0;
+    font: -apple-system-body;
+    font-family: system-ui, sans-serif;
+    background: #2d2b36;
+    background-image: linear-gradient(to bottom, #2d2b36, #2d2b36, #1a1c28);
+    min-height: 100%;
+    min-height: 100vh;
+}
+
+header {
+    display: block;
+    padding-top: env(safe-area-inset-top, 0px);
+    box-sizing: border-box;
+    background: #a9a6ad;
+    background-image: linear-gradient(to bottom, #a9a6ad, #f7ba84 99%, #2d2b36);
+}
+
+header h1 {
+    margin: 0 0 -3em 0;
+    margin: 0 0 -3rem 0;
+    font-family: dpogue, monospace;
+    text-align: right;
+    padding: 2em 3em 1em 0;
+    padding: 2rem 3rem 1rem 0;
+}
+
+header h1 a {
+    display: block;
+    text-decoration: none;
+    color: #2d2b36;
+    font-size: 2.5rem;
+}
+
+header svg {
+    width: 100%;
+    display: block;
+    overflow: hidden;
+}
+
+main {
+    display: block;
+    box-sizing: border-box;
+    width: 90%;
+    width: calc(100vw - 2rem);
+    width: calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 2em;
+    font-weight: 500;
+    color: #f7ba84;
+}
+
+article, section {
+    display: block;
+    background: #cacace;
+    color: #24222a;
+    padding: 1em;
+    padding: 1rem;
+    box-shadow: 0 0 1rem rgba(0, 0, 0, 0.25);
+    border-radius: 0.25rem 0.25rem 0 0;
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+    line-height: 1.5;
+}
+
+a {
+    color: #474658;
+}
+
+footer {
+    text-align: center;
+    color: #f7ba84;
+    font-size: smaller;
+    padding-bottom: 0.5em;
+}

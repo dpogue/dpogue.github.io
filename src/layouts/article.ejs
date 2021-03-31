@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" itemscope itemtype="http://schema.org/Article">
+  <head>
+    <meta charset="utf-8">
+    <title itemprop="name"><%= page.title %> - <%= site.title %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="supported-color-schemes" content="light dark">
+    <meta name="color-scheme" content="light dark">
+    <!--[if IE ]><script src="/js/ieshim.js"></script><![endif]-->
+    <style>
+<%- include("partials/inline.css") -%>
+    </style>
+    <style media="(prefers-color-scheme: dark)">
+<%- include("partials/inline-dark.css") -%>
+    </style>
+    <meta name="theme-color" content="#a9a6ad">
+    <meta name="description" itemprop="description" content="<%= page.description %>">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">
+    <link rel="alternate" href="/feed.xml" type="application/rss+xml" />
+    <link rel="canonical" itemprop="mainEntityOfPage" href="<%= page.canonical ? page.canonical : (site.host + 'articles/' + '.html') %>">
+  </head>
+  <body>
+    <%- include('partials/header.html.ejs') %>
+
+    <main>
+      <h1 id="article-title" itemprop="headline"><%= page.title %></h1>
+      <article aria-labelledby="article-title" itemprop="articleBody"><%- body %></article>
+    </main>
+
+    <%- include('partials/footer.html.ejs') %>
+  </body>
+</html>
