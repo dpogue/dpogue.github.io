@@ -1,0 +1,20 @@
+{
+  "name": "dpogue.ca",
+  "version": "2.0.0",
+  "private": true,
+  "description": "",
+  "keywords": [],
+  "author": "Darryl Pogue <darryl@dpogue.ca>",
+  "homepage": "https://dpogue.ca/",
+  "license": "UNLICENSED",
+  "main": "site.config.js",
+  "dependencies": {},
+  "devDependencies": {
+    "nanogen": "dpogue/nanogen#deps",
+    "static-sitemap-cli": "^1.4.1"
+  },
+  "scripts": {
+    "start": "nanogen start",
+    "build": "nanogen build && static-sitemap-cli $npm_package_homepage -r www -n -c **/*.html=weekly> www/sitemap.xml"
+  }
+}

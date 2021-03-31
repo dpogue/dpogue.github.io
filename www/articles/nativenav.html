@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" itemscope itemtype="http://schema.org/Article">
+  <head>
+    <meta charset="utf-8">
+    <title itemprop="name">Native Navigation in the Mobile Web World - dpogue.ca</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="supported-color-schemes" content="light dark">
+    <meta name="color-scheme" content="light dark">
+    <!--[if IE ]><script src="/js/ieshim.js"></script><![endif]-->
+    <style>
+body {
+    color-scheme: light dark;
+    margin: 0;
+    padding: 0;
+    font: -apple-system-body;
+    font-family: system-ui, sans-serif;
+    background: #2d2b36;
+    background-image: linear-gradient(to bottom, #2d2b36, #2d2b36, #1a1c28);
+    min-height: 100%;
+    min-height: 100vh;
+}
+
+header {
+    display: block;
+    padding-top: env(safe-area-inset-top, 0px);
+    box-sizing: border-box;
+    background: #a9a6ad;
+    background-image: linear-gradient(to bottom, #a9a6ad, #f7ba84);
+}
+
+header svg {
+    width: 100%;
+    display: block;
+    overflow: hidden;
+}
+
+main {
+    display: block;
+    box-sizing: border-box;
+    width: 90%;
+    width: calc(100vw - 2rem);
+    width: calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 2em;
+    font-weight: 500;
+    color: #f7ba84;
+}
+
+article, section {
+    display: block;
+    background: #cacace;
+    color: #24222a;
+    padding: 1em;
+    padding: 1rem;
+    box-shadow: 0 0 1rem rgba(0, 0, 0, 0.25);
+    border-radius: 0.25rem 0.25rem 0 0;
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+    line-height: 1.5;
+}
+
+a {
+    color: #474658;
+}
+    </style>
+    <style media="(prefers-color-scheme: dark)">
+article, section {
+    color: #cacace;
+    background: #24222a;
+    box-shadow: 0 0 1rem rgba(0, 0, 0, 0.25);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+a {
+    color: #f7ba84;
+}
+    </style>
+    <meta name="theme-color" content="#a9a6ad">
+    <meta name="description" itemprop="description" content="Some thoughts on the problem of native navigation for hybrid mobile apps and the web, and a review of potential solutions.">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="canonical" itemprop="mainEntityOfPage" href="https://dpogue.ca/articles/nativenav.html">
+  </head>
+  <body>
+    <header>
+  <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 2828 460" preserveAspectRatio="xMidYMax meet" role="presentation">
+    <title>dpogue.ca</title>
+    <path role="presentation" fill="#615968" d="M902 203c26-10 51-19 66-27 14-9 17-15 20-17 2-2 4 2 7 2s7-3 13-3c5-1 10 2 16 2l16-3c5 0 11 4 18 7l23 4c8 2 14 5 20 8 5 4 8 6 14 7l23 1c10 0 20 2 26 3l13 4h13c5 0 12 2 19 4l22 6 24 3 12 3h10l23 2 32 3 27 4 19 3 14 4 25 3 25 6 28 6 26 1 30 6c13 3 32 4 50 5h49c15 1 28 4 40 6l33 5 34 1 33 3c10 2 17 3 28 2h41c16 2 32 7 43 9 10 1 15-1 22-1l26 3 29 2 40 4c17 2 35 3 57 7 22 3 48 8 65 12s27 6 37 6 20-2 45 1c78 10 155 25 230 46 50 14 112 35 174 55l226 49H902"></path>
+    <path role="presentation" fill="#655764" d="M1161 460l-2-184-50-26c-23-14-58-35-90-51s-61-28-79-34c-17-7-24-7-28-8-5-1-7-3-10-5l-8-11-10-13-13-10-8-3-6 3-9 9-16 14c-5 5-7 8-10 9-3 2-6 1-9 0l-10-5c-4-1-7 0-11 2l-14 8c-4 2-5 3-7 1-3-1-6-5-8-9l-6-7-6-1-8 1-10-1c-3-1-4-3-6-7-2-3-4-9-8-12s-9-3-12-4l-8-3-4 2-6-2-5 1-10-4h-9l-7 2c-2 1-4-1-6-4l-6-6c-2-1-3 1-5 1l-4 2c-2 0-5-1-8 1-3 1-6 4-9 7l-7 10c-2 3-4 5-9 7l-43 14-152 46v270"></path>
+    <path role="presentation" fill="#655764" d="M778 460V214l-69-24-32-13-45-22-38-17c-7-3-7-4-7-6-1-2-1-5-5-8-3-3-10-6-16-8-7-3-13-4-19-5h-17l-10 3-7 6h-5l-6 2-8-4c-3-3-8-8-13-10-6-3-12-4-17-5h-16l-7-3-10-8c-3-1-4-2-6-1l-7 4-9 8-12 5-22 5h-9l-6 3-7 7-11 3c-3 0-5 2-7 5l-7 12-11 11-12 7c-3 2-3 1-8 2-4 0-11 0-19 2-12 3-24 7-34 14l-8 5-14 3-16-1c-5 1-11 2-16 5l-14 7-14 15c-10 11-26 31-34 76-9 45-9 102-9 171"></path>
+    <path role="presentation" fill="#474658" d="M1161 460l-2-184c-33-16-65-32-91-42s-45-14-70-18c-26-4-58-7-85-9l-68-5c-18-3-29-6-39-9-9-3-17-7-29-8-30-3-60-1-89 5l-41 9c-13 2-25 1-37 0s-25-3-39-1c-13 2-28 8-44 15-39 16-78 30-119 40l1 207"></path>
+    <path role="presentation" fill="#4c4859" d="M605 460V273c-21-7-42-13-59-21-17-7-30-16-43-24-14-8-27-16-44-22-31-12-63-17-96-16l-21 1-23-4c-9-1-20-3-27-2-7 0-12 2-17 4l-21 2h-27c-22 1-44 6-65 13-9 3-14 6-22 6-9 1-22-1-31-1-10 0-16 2-29 10-12 8-31 21-41 30-10 8-12 12-15 17l-12 16-12 9v169"></path>
+    <path role="presentation" fill="#2d2b36" d="M0 460v-69l89-44c30-14 59-26 88-33 29-6 57-7 85-8 56-2 112-11 165-28 21-7 29-11 41-18 11-6 25-14 36-18 10-4 16-2 22-2h16c7-1 16-3 26-2l33 6c11 2 19 2 28 1s17-3 26-3c8-1 16 1 25 1l25 1c8 0 17 3 23 4 5 1 8 1 17-2l38-11c19-6 39-6 57 1l23 10c5 2 6 4 9 4h10c5 1 12 3 17 7l18 10c8 3 19 4 30 8l28 12c7 3 10 2 21 0l43-10c15-3 27-6 42-7 15-2 32-2 54 2 22 3 49 9 84 16l105 20c29 4 47 4 76 5 28 2 67 4 123 5l223 5c92 3 203 10 386 29 184 19 442 52 699 84v24"></path>
+    <path role="presentation" fill="none" stroke="#2d2b36" stroke-width="6" stroke-linecap="round" d="m 2114.4321,56.96991 c -0.4226,0 -0.8451,0 2.9584,8.875197 4.015,9.086511 12.2562,27.470852 17.7505,42.685473 5.4941,15.42594 8.4525,28.10479 7.8185,38.03656 -0.6339,10.14308 -4.8602,17.53909 -12.2561,21.34274 -7.3961,3.80365 -18.1731,3.80365 -24.5125,-0.42263 -6.3394,-4.22628 -8.4526,-12.25622 -6.3394,-19.44091 2.1131,-7.18468 8.8752,-13.31279 15.2146,-16.05988 6.3394,-2.95839 12.6788,-2.32445 19.0183,-1.90183 m 7.6073,105.02317 c 0.4226,0.42263 0.6339,0.63395 1.6905,-9.08651 0.8453,-9.93177 2.5358,-29.7953 5.0716,-46.0665 a 99.740309,99.740309 0 0 1 11.4109,-36.97998 c 5.2829,-8.45257 12.6788,-13.10148 21.1314,-12.67886 8.2413,0.21131 17.5391,5.28285 21.1315,12.04491 3.5923,6.76205 1.6905,14.792 -3.8037,20.28617 a 28.10479,28.10479 0 0 1 -21.1314,6.76205 c -6.9733,-0.63394 -12.2562,-4.22629 -17.5391,-7.60731 m 134.3959,6.76205 c -6.3395,1.05658 -12.4676,2.11314 -19.0183,0 -6.762,-2.11314 -13.9468,-7.60731 -16.9051,-14.58067 -2.9585,-6.76206 -1.4793,-15.21463 4.2262,-19.86354 6.3394,-4.86023 16.9051,-5.91681 24.5125,-2.95841 7.8186,3.16972 12.6789,10.14309 14.3694,20.07485 1.6905,9.93178 0,22.82194 -2.1132,39.72708 -1.9018,17.11645 -4.2263,38.6705 -10.777,46.91176 -6.7621,8.45256 -17.7505,3.59234 -24.9351,-3.16972 a 59.16798,59.16798 0 0 1 -13.5241,-24.30113 m -19.6522,-76.70706 a 28.950047,28.950047 0 0 0 -16.4826,15.84856 c -2.5357,6.97338 0,14.792 7.1847,18.17303 7.3961,3.59234 19.8636,2.74709 25.3577,-3.38103 5.2829,-6.33943 3.5924,-17.96171 0,-24.72377 -3.8036,-6.55073 -9.5091,-8.45257 -16.0598,-5.91679 z m 84.5257,-1.69052 c 0,7.18469 -0.4227,14.36937 0.8452,21.13143 1.0566,6.97337 3.5923,13.31279 8.6638,15.84856 5.283,2.74708 13.1015,1.69051 18.5957,-1.90182 5.4942,-3.38103 8.6639,-9.50914 10.3544,-15.63726 1.4792,-6.33943 1.4792,-12.46754 1.4792,-18.80696 m 16.9052,19.65221 c 7.3959,1.05658 15.2146,2.11315 21.554,0 6.3394,-2.11313 10.9883,-7.6073 9.2978,-13.10147 -1.6905,-5.49417 -9.9318,-10.98835 -17.539,-11.19966 a 19.01828,19.01828 0 0 0 -17.9618,12.25623 c -3.1697,7.60731 -2.5357,17.75039 1.9019,23.24456 4.2263,5.49417 12.2562,6.33943 19.8635,6.33943 7.396,0 14.3694,-1.4792 21.554,-2.95841"></path>
+    <a xlink:href="/">
+      <rect fill="transparent" x="2050" y="50" height="200" width="400"></rect>
+    </a>
+  </svg>
+</header>
+
+
+    <main>
+      <h1 id="article-title" itemprop="headline">Native Navigation in the Mobile Web World</h1>
+      <article aria-labelledby="article-title" itemprop="articleBody"><p><small>Posted on <time pubdate datetime="2014-10-06">October 6<sup>th</sup>, 2014</time></small></p>
+<p>Much has been written on the subject of web-based mobile apps and how they
+compare to native apps.  Often there&#39;s a lot of unfair prejudice against web
+apps, but one point that consistently stands is related to navigation in web
+apps.  Although there are hundreds of libraries that claim to implement
+native-feeling navigation for the web, it&#39;s incredibly difficult to match user
+expectations about interaction, responsiveness, guesture support, and other
+default behaviours.  To complicate matters, these expectations can vary
+significantly from platform to platform, and version to version (iOS6 vs iOS7).</p>
+<p>The common tools for packaging web apps for mobile, such as Apache
+Cordova/Adobe Phonegap, don&#39;t offer much of a solution to this navigation
+problem.  Your application essentially consists of a full-screen web view that
+displays your web content, leaving you responsible for all app navigation
+controls.</p>
+<h2 id="37signals-and-the-hybrid-approach">37signals and the Hybrid approach</h2>
+<p>There was a <a href="https://signalvnoise.com/posts/3743-hybrid-sweet-spot-native-navigation-web-content">post in early 2014</a> by DHH from 37signals about their
+Basecamp mobile app and how it combined web content with native navigation.
+This is where things start moving into so-called &quot;hybrid&quot; apps: a mix of web
+content and native controls.</p>
+<p>Several people took the 37signals blog as inspiration and looked for ways to
+build tools that would automatically generate native navigation controls based
+on website content.  A few examples:</p>
+<ul>
+<li><p><a href="https://gonative.io/">GoNative</a> parses a website for navigation menus, generates a JSON
+configuration file for them, and packages it up into an app that builds
+native menus from the JSON config.  Their Android and iOS app containers are
+open-source on GitHub, but the website parsing code is done as a service
+through the website.</p>
+</li>
+<li><p><a href="http://www.lokimeyburg.com/Stacker/">Stacker</a> for iOS uses URL parameters to update native controls in the
+title bar.  Websites are loaded in a web view, which intercepts URL
+navigation to update the native controls.  This allows the native controls to
+be controlled through the HTML dynamically, and by intercepting the requests
+before they are sent over the network there is no delay before the native
+controls update.  This makes the app feel more responsive.</p>
+</li>
+</ul>
+<p>These are good solutions for taking web content from a server and displaying it
+with native navigation controls, but in many cases web apps are built with
+client-side frameworks that run entirely client-side.  These are cases where
+Cordova/Phonegap is often the technology of choice because it will package up
+existing files and serve them locally on the mobile device.</p>
+<p>Another disadvantage to these solutions is that some of the customization has
+to happen in native code.  Ideally we could control the native navigation
+controls with the same ease and flexibility that we have with the HTML
+<code>&lt;title&gt;</code> tag.</p>
+<p>So how do we make native controls which are defined entirely by HTML?  Could
+these be defined in such a way that browsers can automatically generate native
+navigation controls for apps?</p>
+<h2 id="imagining-an-ideal-solution">Imagining an Ideal Solution</h2>
+<p>There is already one case where HTML can control an aspect of the native
+interface, through the <code>&lt;title&gt;</code> tag.  If you change the title in HTML via
+JavaScript, the browser updates the window automatically with the new title.
+One common feature of mobile navigation is a title bar displayed across the top
+of the screen, and it makes sense for the content of that title to reflect the
+title of the page in the web view.</p>
+<p>Another existing convention found in web browsers is the back button.  History
+on the web works like a stack, with each new page or state adding to the top of
+that stack, and the back button popping the most recent state off the top.
+With the <a href="https://html.spec.whatwg.org/multipage/browsers.html#the-history-interface">HTML5 History API</a>, we have <code>pushState()</code> and <code>replaceState()</code> to
+allow single-page applications to add to the history stack without page
+reloads.  Unfortunately, there is one key piece missing from the History API,
+which is the ability to remove pages from the history stack programmatically.
+It&#39;s somewhat understandable that we wouldn&#39;t want any website to be able to
+start removing entries from the history stack, but for web apps there are
+plenty of use cases.</p>
+<p>Imagine you have an app with a landing page, a signup page, and a logged-in
+dashboard.  Someone launches the app for the first time and sees the landing
+page, then clicks signup.  At this point, hitting back should take them to the
+landing page.  After signing up, they are redirected to the dashboard. Hitting
+back here shouldn&#39;t really do anything; it&#39;s definitely wrong to take them back
+to signup when they&#39;re already logged in.  If we used <code>replaceState()</code> when
+redirecting, hitting back on the dashboard would still take them back to the
+landing page which might also be undesirable.  Unfortunately, there&#39;s no
+JavaScript API (or even native web view API in most cases) for clearing the
+history stack.</p>
+<p>One part of the HTML5 spec that hasn&#39;t seen much adoption is <a href="http://www.w3.org/html/wg/drafts/html/master/interactive-elements.html#the-menu-element">the <code>&lt;menu&gt;</code>
+element</a>.  In HTML3 this was just treated like a list, and was
+removed from HTML4, but it&#39;s been added back in HTML5 along with a <code>&lt;menuitem&gt;</code>
+element to build native toolbar and context menus.  The idea is that web apps
+can define a menu with a unique ID containing items and submenus, and then
+refer to that menu by ID using the <code>contextmenu=&quot;&quot;</code> attribute.  When someone
+right-clicks on long-presses on the element, the browser should open a context
+menu with the items and submenus from the HTML.<br>At the time of writing (October 2014) only Firefox natively supports this, but
+there is ongoing work to implement this in Chrome.</p>
+<p>Custom context menus with the <code>&lt;menu&gt;</code> tag would give developers more ability
+to affect native interactions via HTML, but doesn&#39;t go quite far enough to
+provide everything that would be needed for native navigation.  In particular,
+the actual navigation part is still missing.  This is harder to solve, partly
+because of the disparate navigation controls across platforms and devices, and
+partly because there isn&#39;t a clear mapping to HTML.</p>
+<h3 id="defining-navigation">Defining Navigation</h3>
+<h4 id="nav-elements"><code>&lt;nav&gt;</code> elements</h4>
+<p>One possibility is to pull content from the <code>&lt;nav&gt;</code> element, but its contents
+are not required to be structured in any consistent way, and it doesn&#39;t have a
+tightly scoped use case.  The HTML5 spec essentially says to use <code>&lt;nav&gt;</code>
+anywhere that is &quot;a section with navigation links&quot;.  There are no restrictions
+on the number of <code>&lt;nav&gt;</code> elements on the page.  While it would be possible to
+make some guesses based on the structure of the navigation content, it&#39;s an
+ugly situation that should be avoided if possible.</p>
+<h4 id="meta-tags">Meta tags</h4>
+<p>Navigation and primary page actions could be specified by custom meta tags,
+which is roughly the approach used by Internet Explorer for its <a href="http://msdn.microsoft.com/en-ca/library/ie/gg491725%28v=vs.85%29.aspx">pinned site
+jump lists</a>.  In a single-page application however, this isn&#39;t
+an ideal solution: meta tags are intended to apply to the document as a whole,
+and modifying them at runtime can be buggy.  Most client-side frameworks are
+also focussed on the page content in the body, and aren&#39;t set up to manage meta
+tags.</p>
+<h4 id="javascript">JavaScript</h4>
+<p>Some mobile platforms have exposed JavaScript APIs for defining navigation
+menus, such as <a href="http://msdn.microsoft.com/en-us/library/windows/apps/hh700921.aspx">WinJS.UI.Menu</a> and <a href="http://developer.blackberry.com/bbos/html5/apis/blackberry.ui.menu.html">blackberry.ui.menu</a>.  These work well
+for their respective platforms, but there&#39;s no consistent API for
+multi-platform applications (which web apps often are).  It&#39;s also my belief
+that the navigation should be defined as part of the page structure, rather
+than manually constructed through JavaScript.  This allows for fallbacks in
+browsers that don&#39;t support generating native navigation elements.</p>
+<h4 id="web-components">Web Components</h4>
+<p>Web components allow the creation of new custom elements with registration
+events and logic available through JavaScript.  Defining a new <code>&lt;native-menu&gt;</code>
+element would be easy, and using JavaScript could be mapped onto existing APIs
+like WinJS.UI.Menu or blackberry.ui.menu.  Ultimately it has the same issues as
+those JavaScript APIs in that the implementation would be platform-specific.
+The only benefit is that the navigation would be defined in the HTML.</p>
+<h4 id="menu-typetoolbar-elements"><code>&lt;menu type=&quot;toolbar&quot;&gt;</code> elements</h4>
+<p>Finally we&#39;re left with the toolbar version of the <code>&lt;menu&gt;</code> tag.  The HTML5
+spec says that a menu of type toolbar should <code>&lt;li&gt;</code> elements or flow content.
+That gives us some degree of structure that can be parsed, but those <code>&lt;li&gt;</code>
+tags could still contain anything.  Although not explicitly stated in the spec,
+the toolbar type of the menu tag is essentially intended to behave like a
+<code>&lt;ul&gt;</code> tag for compatibility with HTML3.</p>
+<p>We could informally make some assumptions about what would be considered a
+valid menu.  The easy path would be to require <code>&lt;li&gt;</code> elements that contain a
+valid command type (as defined in the HTML5 spec, which is basically one of
+<code>&lt;a&gt;</code>, <code>&lt;button&gt;</code>, or <code>&lt;input&gt;</code>).  That would serve as a starting point, but
+there&#39;s really no way to enforce these informal guidelines.  There&#39;s also
+nothing preventing multiple menus from being declared in the page, which would
+lead to ambiguity when trying to parse and generate native components.  It
+might be reasonable to only build native navigation for a menu that is a direct
+child of the body, but that&#39;s just adding more unofficial rules to the mix.</p>
+<h2 id="the-path-forward">The Path Forward</h2>
+<p>Unfortunately there&#39;s no single clear solution to all of this that can work in
+browsers today, or that&#39;s even an official proposal for browsers tomorrow.
+I&#39;ve spoken informally to some browser developers about what sort of solution
+they envision, but it&#39;s a hard problem to describe and the brief answer has
+usually been to point to Web Components for custom elements.</p>
+<p>Some attempts have been made to make due with the <code>&lt;menu&gt;</code> tag, despite the
+open questions about how suitable it is.  One of the Cordova developers
+<a href="https://github.com/mwbrooks/cordova-plugin-menu/tree/5a13232dbeac867583f6ecbefd0b44f65c9816e2">started a plugin</a> in 2011 to act as a polyfill for native
+menus, and I am responsible for a <a href="https://github.com/dpogue/cordova-plugin-cambie">newer plugin</a> along the same lines.
+Ultimately these <em>can&#39;t</em> really be polyfills for native navigation if there&#39;s
+no clear guideline on what should be polyfilled and how it should behave.</p>
+<p>I would love to hear from browser developers, mobile OS developers, app
+developers, and hybrid platform developers what they envision as an ideal
+solution to this problem.  The web improves through discussion.</p>
+</article>
+    </main>
+  </body>
+</html>

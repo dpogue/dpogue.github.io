@@ -1,0 +1,115 @@
+::selection {
+    background: #f7ba84;
+    color: black;
+}
+
+@media (prefers-color-scheme: dark) {
+    ::selection {
+        color: white;
+    }
+}
+
+.text-center  { text-align: center; }
+.text-right   { text-align: right; }
+
+pre, code, kbd, tt {
+    font-family: 'Roboto Mono', 'Droid Sans Mono', 'Consolas', 'Menlo', 'Lucida Console', 'Monaco', monospace;
+}
+
+pre {
+    padding: 5px;
+    border: 0.5px solid #474658;
+    overflow-x: auto;
+}
+
+code, tt {
+    white-space: nowrap;
+}
+
+pre code {
+    white-space: pre;
+}
+
+h3,
+strong {
+    font-weight: 500;
+}
+
+ul {
+    margin: 0;
+}
+
+ul.bullets-none {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+article.floating, section.floating {
+    border-radius: 0.25rem;
+}
+
+article > h2:first-child, section > h2:first-child {
+    margin-top: 0;
+}
+
+
+figure {
+    background: rgba(71, 70, 88, 0.15);
+    text-align: center;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1em;
+    padding: 1rem;
+
+}
+
+figcaption {
+    font-size: 80%;
+    padding-top: 0.5em;
+    padding-top: 0.5rem;
+    font-weight: 400;
+}
+
+img {
+    max-width: 100%;
+}
+
+.img-center {
+    text-align: center;
+    margin: 0 auto;
+    display: block;
+}
+
+.img-lightbg {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+abbr {
+    font-variant-caps: all-small-caps;
+    font-variant-numeric: oldstyle-nums;
+}
+
+
+blockquote {
+    margin: 0;
+    padding-left: 1em;
+    padding-left: 1rem;
+    font-weight: 300;
+    border-left: 0.5em solid #474658;
+    border-left-width: 0.5rem;
+}
+
+@media (min-width: 500px) {
+    blockquote {
+        margin-left: 2em;
+        margin-left: 2rem;
+    }
+}
+
+hr {
+    height: 1px;
+    border: 0 none;
+    border-top: 1px dashed #474658;
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.5);
+}

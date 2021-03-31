@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title><%= page.title %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="supported-color-schemes" content="light dark">
+    <meta name="color-scheme" content="light dark">
+    <!--[if IE ]><script src="/js/ieshim.js"></script><![endif]-->
+    <style>
+<%- include("partials/inline.css") -%>
+    </style>
+    <style media="(prefers-color-scheme: dark)">
+<%- include("partials/inline-dark.css") -%>
+    </style>
+    <meta name="theme-color" content="#a9a6ad">
+<% if (page.description) { %>
+    <meta name="description" content="<%= page.description %>">
+<% } %>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <%- include('partials/header.html.ejs') %>
+
+    <main>
+      <%- body %>
+    </main>
+  </body>
+</html>
