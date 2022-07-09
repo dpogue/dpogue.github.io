@@ -1,0 +1,45 @@
+name: Deploy to GitHub Pages
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+
+      - name: 'Setup Node'
+        uses: actions/setup-node@v2
+        with:
+          cache: npm
+
+      - name: 'Install'
+        run: npm ci
+
+      - name: 'Build'
+        run: npm run build
+
+      - name: 'Upload'
+        uses: actions/upload-pages-artifact@v0.1.0
+        with:
+          path: www
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        name: 'Deploy to GH Pages'
+        uses: actions/deploy-pages@v1
