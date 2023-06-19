@@ -12,6 +12,11 @@
 .text-center  { text-align: center; }
 .text-right   { text-align: right; }
 
+header h1 {
+    position: sticky;
+    top: 0;
+}
+
 pre, code, kbd, tt {
     font-family: 'Roboto Mono', 'Droid Sans Mono', 'Consolas', 'Menlo', 'Lucida Console', 'Monaco', monospace;
 }

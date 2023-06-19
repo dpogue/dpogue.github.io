@@ -5,18 +5,64 @@
     <link>https://dpogue.ca</link>
     <description>darryl@dpogue.ca</description>
     <atom:link href="http://dpogue.ca/feed.xml" rel="self" type="application/rss+xml" />
-    
-    
-    
-    
-    
-    
-    
-    
-    
-      <item>
-        <title>Cordova builds with Xcode 8</title>
-        <description><![CDATA[<p><small>Posted on <time pubdate datetime="2016-09-14">September 14<sup>th</sup>, 2016</time> &bull; Updated on <time datetime="2016-09-23">September 23<sup>rd</sup>, 2016</time></small></p>
+    <item>
+      <title>Uru on Linux/OpenGL: 2023 update</title>
+      <description><![CDATA[<div><small>Posted on <time pubdate datetime="2023-06-18">June 18<sup>th</sup>, 2023</time></small></div>
+<p>It&#39;s been a while since I wrote my <a href="/articles/plglpipeline-2016.html">last update</a>, and things have definitely come a long way since then. We gave <a href="https://www.youtube.com/watch?v=6s4LzDh1bn8">a presentation</a> at Mysterium 2022, and Colin has written a bit about his experience <a href="https://www.colincornaby.me/2022/11/one-year-of-working-on-myst-online-for-mac-metal/">porting Uru to macOS with metal-cpp</a>.</p>
+<p>Almost all of the blockers for a full cross-platform port have been resolved:</p>
+<ul>
+<li>PhysX has been updated to an open-source and cross-platform version,</li>
+<li>the Win32-specific networking code has been rewritten,</li>
+<li>Python has been updated to Python 3.10,</li>
+<li>numerous 64-bit issues have been addressed as part of 64-bit support for Windows,</li>
+<li>library management &amp; automated builds have been drastically simplified using <a href="https://vcpkg.io/">vcpkg</a>.</li>
+</ul>
+<p>This work is in large part thanks to Adam (Hoikas), Zrax, Colin, and numerous other contributors. There was a big spike in activity in the 2020/2021 timeframe that led to a lot of long-await work being completed.</p>
+<p>All the remaining work is around the actual rendering and integration with the platform for stuff like window management and input. There are two separate (but very very related) projects that I&#39;m working on: the <strong>OpenGL rendering pipeline</strong> (which will support Linux, macOS, and Windows) and the <strong>Linux client application</strong>.</p>
+<figure>
+  <video src="/vid/glclient-202303.mp4" style="width: calc(100% - 40px); max-width: 1080px" controls></video>
+  <figcaption>Video clip showing Uru, running on Linux with OpenGL rendering, as of March 2023.<br>The game footage in the video is a bit stuttery due to the recording process, but is much smoother (although far from perfect) in actual gameplay.</figcaption>
+</figure>
+
+
+<h2 id="opengl-rendering-pipeline">OpenGL Rendering Pipeline</h2>
+<p>There have been some small fixes to the rendering pipeline over the years, but no significant changes. The initial approach that I took as a proof-of-concept involved generating a new shader on the fly for every Plasma material, and that ends up causing all sorts of performance issues in areas with lots of stuff on the screen. The solution is to make fewer shaders with more conditionals within the shader to handle the different layer blending modes, but that&#39;s a significant change that I&#39;ve been putting off for a few years now.</p>
+<p>Realistically, I don&#39;t have a background in OpenGL or <abbr>3D</abbr> graphics, so it&#39;s a bit daunting to look at the implementation details for some of these changes, particularly when the OpenGL docs are not the most helpful.</p>
+<p>My initial plan is to target OpenGL 3.3 and newer, which should cover most reasonably up-to-date Linux, macOS, and Windows versions. It would be really cool to have a fallback to OpenGL 2.x for older systems, but I think I might be the only person who gets excited about the prospect of running Uru on Mac OS X Leopard PowerPC. 😅</p>
+<h2 id="linux-client-application">Linux Client Application</h2>
+<p>Currently I have a branch with a barebones <abbr>X11</abbr> client, but only handling the game window. Login is handled with text-based prompts in the terminal (although I did mock up a <a href="https://www.youtube.com/watch?v=UM6HmORpjD4">pure <abbr>X11</abbr> login window</a> for fun a while back). Mouse and keyboard input is also handled using <abbr>X11</abbr> events.</p>
+<p>The <abbr>X11</abbr> client is definitely going to keep progressing, but it&#39;s probably also necessary to do Wayland-based client too. Ideally those would live in the same executable and determined at runtime by inspecting the <code>XDG_SESSION_TYPE</code> environment variable, but that involves dynamically loading all the functions we need for both <abbr>X11</abbr> and Wayland.</p>
+<p>The login window is another thing that needs a bit of thinking. A pure <abbr>X11</abbr> window is nice as a fallback, but would feel incredibly out of place in a Wayland desktop environment. I could, in theory, do dynamic loading of <abbr>GTK</abbr> libraries but that it feels out of place on <abbr>KDE</abbr>, and I really don&#39;t want to do build-time linking to all these different UI toolkit libraries&hellip;<br>This might be something best left until after the game client is fully working, when it&#39;s easier for other people to contribute.</p>
+<figure>
+  <img class="img-center" src="/img/ki-chat-gl-2023.png" style="width: calc(100% - 40px); max-width: 1080px">
+  <figcaption>Screenshot from the All Guilds' Meeting in Kirel running on Linux with the OpenGL renderer.</figcaption>
+</figure>
+
+<h2 id="next-steps">Next Steps</h2>
+<p>Speaking of opportunities for contributions, this is where things get messy. Right now this work is spread across 5 different branches in git, which are continuously being rebased on top of other merges to the main branch, and it&#39;s a bit of a nightmare for anyone to follow or test out the code.</p>
+<p>There are a few dependencies in term of order of operations here, because we don&#39;t want to merge anything that isn&#39;t able to be tested:</p>
+<ul>
+<li><p>The first step is going to be getting some basic OpenGL pipeline support merged. There&#39;s an open pull request with the current renderer work, but there have been concerns raised about the dynamic shader stuff, so that will probably be stripped out (and the intention is to replace it anyways, since it&#39;s a source of performance issues). Merging the OpenGL renderer would allow the OpenGL pipeline to be tested on Windows with the existing Win32 client.</p>
+</li>
+<li><p>Next, the initial <abbr>X11</abbr> Linux client could be merged, since it would now have a worker rendering pipeline for testing.</p>
+</li>
+<li><p>Then further improvements to both the Linux client and the OpenGL pipeline could be worked on by multiple people, with much faster testing and upstream merging.</p>
+</li>
+</ul>
+<p>I can&#39;t give a timeline for any of these things because they depend on limited free time from both myself and other reviewers, but I would love to get this to a point where I&#39;m not juggling rebases on 5 branches and where people can build it themselves in the near future.</p>
+<p>The long term plan remains uncertain. Currently none of the cross-platform work from the H&#39;uru repository has been accepted by OpenUru, and despite promises to prioritize this effort at the last Mysterium, there has been no visible progress. It remains a source of much frustration and disappointment that improvements to the MOULa game client are essentially held hostage by a single person. It&#39;s incredibly demotivating to pour a over a decade worth of time and energy into this work with no expectation of it ever being available on MOULa.</p>
+]]></description>
+      <pubDate>Sun Jun 18 2023 22:34:00 GMT-0700 (PDT)</pubDate>
+      <link>https://dpogue.ca/articles/plglpipeline-2023.html</link>
+      <guid isPermaLink="true">https://dpogue.ca/articles/plglpipeline-2023.html</guid>
+    </item>
+
+
+
+
+    <item>
+      <title>Cordova builds with Xcode 8</title>
+      <description><![CDATA[<p><small>Posted on <time pubdate datetime="2016-09-14">September 14<sup>th</sup>, 2016</time> &bull; Updated on <time datetime="2016-09-23">September 23<sup>rd</sup>, 2016</time></small></p>
 <p>With iOS 10 comes a new Xcode version, and with a new Xcode version comes new and unexpected provisioning profile and code signing issues.  The good news is that Xcode 8 brings better support for handling multiple developer teams, and can largely handle provisioning profiles automatically.  The bad news is that <a href="https://cordova.apache.org/">Apache Cordova</a> (and related tools like <a href="http://phonegap.com/">Adobe PhoneGap</a>) won&#39;t be able to make command-line release builds out of the box.</p>
 <h2>Xcode 8 Automatic Provisioning</h2><p>I&#39;ll start with this: if you want all the details about how code signing has changed in Xcode 8, you cannot do better than <a href="https://pewpewthespells.com/blog/migrating_code_signing.html#signing-in-xcode-8">this very thorough explanation</a>.</p>
 <p>If you&#39;re looking for a summary:</p>
@@ -52,17 +98,17 @@
 <hr>
 <p>Special thanks to <a href="http://www.christian-cook.co.uk/">Christian</a> and <a href="https://shazronatadobe.wordpress.com/">Shazron</a> for their help in figuring out the required config bits.<br>An <em>enormous</em> thank you to <a href="https://pewpewthespells.com/">Samantha</a> for her amazing post about Xcode 8 code signing changes, and being the only document that made any sense.</p>
 ]]></description>
-        <pubDate>Wed Sep 14 2016 01:00:00 GMT-0700 (PDT)</pubDate>
-        <link>https://dpogue.ca/articles/cordova-xcode8.html</link>
-        <guid isPermaLink="true">https://dpogue.ca/articles/cordova-xcode8.html</guid>
-      </item>
-    
-    
-    
-    
-      <item>
-        <title>Seymour: Cordova build helper</title>
-        <description><![CDATA[<p><small>Posted on <time pubdate datetime="2015-11-16">November 16<sup>th</sup>, 2015</time></small></p>
+      <pubDate>Wed Sep 14 2016 01:00:00 GMT-0700 (PDT)</pubDate>
+      <link>https://dpogue.ca/articles/cordova-xcode8.html</link>
+      <guid isPermaLink="true">https://dpogue.ca/articles/cordova-xcode8.html</guid>
+    </item>
+
+
+
+
+    <item>
+      <title>Seymour: Cordova build helper</title>
+      <description><![CDATA[<p><small>Posted on <time pubdate datetime="2015-11-16">November 16<sup>th</sup>, 2015</time></small></p>
 <p>At <a href="http://ayogo.com">Ayogo Health</a>, our development process for <a href="https://cordova.apache.org/">Cordova</a> mobile apps includes a number of &quot;intermediate&quot; builds before the final version that will be released.  These range from local dev builds communicating with local dev servers, <abbr>QA</abbr> builds distributed internally communicating with a <abbr>QA</abbr> server, builds for user testing and feedback, staging builds to be shown to project clients the communicate with a staging server, ad-hoc builds for marketing and conference demonstrations, and finally the production builds that will be made available for public download.</p>
 <p>Managing all of these builds can be a bit challenging, mostly around ensuring that the right build is configured to communicate with the right server, and that they have different app <abbr>ID</abbr>s and app names so they don&#39;t conflict with one another.  We use <a href="https://jenkins-ci.org/">Jenkins</a> as a continuous integration environment and also as an automated build system.  For instance, our <abbr>QA</abbr> apps are rebuilt every time there a pull request is merged and the <abbr>QA</abbr> team is notified with a changelog.</p>
 <p>With Cordova, the app name and <abbr>ID</abbr> are set via a config.xml file in the root of the project.  One of the steps we have Jenkins perform is a handful of <code>sed</code> commands to manipulate those values.  Ultimately we end up with a scenario where each build job on Jenkins is running slightly different steps in slightly different orders.</p>
@@ -85,17 +131,17 @@
 <p>Seymour is available to install through <code>npm</code>, and the code is <a href="https://github.com/dpogue/seymour">available on GitHub</a> under the Apache 2.0 licence.  Please report any issues or feature requests.</p>
 <p>As a word of caution, Seymour is built on top of the recently released Cordova 5.4.0 which is known to have some issues.  Those should hopefully be fixed with a 5.4.1 release in the coming week.</p>
 ]]></description>
-        <pubDate>Mon Nov 16 2015 00:00:00 GMT-0800 (PST)</pubDate>
-        <link>https://dpogue.ca/articles/seymour.html</link>
-        <guid isPermaLink="true">https://dpogue.ca/articles/seymour.html</guid>
-      </item>
-    
-    
-    
-    
-      <item>
-        <title>HTML5 Menus &amp; Browser Support</title>
-        <description><![CDATA[<p><small>Last Updated on <time itemprop="dateModified" datetime="2016-04-08">April 8<sup>th</sup>, 2016</time></small></p>
+      <pubDate>Mon Nov 16 2015 00:00:00 GMT-0800 (PST)</pubDate>
+      <link>https://dpogue.ca/articles/seymour.html</link>
+      <guid isPermaLink="true">https://dpogue.ca/articles/seymour.html</guid>
+    </item>
+
+
+
+
+    <item>
+      <title>HTML5 Menus &amp; Browser Support</title>
+      <description><![CDATA[<p><small>Last Updated on <time itemprop="dateModified" datetime="2016-04-08">April 8<sup>th</sup>, 2016</time></small></p>
 <p>The <code>&lt;menu&gt;</code> tag has a bit of a troubled history. In <abbr>HTML3</abbr> it was essentially synonymous with <code>&lt;ul&gt;</code>.  It was deprecated in <abbr>HTML4</abbr>, but added back to the specification for <abbr>HTML5</abbr>.  Due to feedback from browser makers, it changed a bit between the publishing of the <abbr>W3C</abbr> <abbr>HTML5</abbr> spec and the continued work on the <abbr>WHATWG</abbr> <abbr>HTML5.1</abbr> spec.</p>
 <p>The purpose of the <code>&lt;menu&gt;</code> tag is to allow web applications to provide context menu actions that will be merged into the browser&#39;s native context menu.  This is something that has been implemented using JavaScript libraries for years, but the advantage of native support is that it doesn&#39;t prevent access to the existing browser menus.</p>
 <p>Support is a bit lacking at this point, but there&#39;s definite progress in a few browsers.  There are actually a few different pieces of menu-related support that we&#39;re interested in knowing about:</p>
@@ -291,17 +337,17 @@
 <li><strong><time itemprop="datePublished" datetime="2015-03-04">March 4<sup>th</sup>, 2015</time>:</strong> Originally published.</li>
 </ul>
 ]]></description>
-        <pubDate>Wed Mar 04 2015 00:00:00 GMT-0800 (PST)</pubDate>
-        <link>https://dpogue.ca/articles/html5-menu.html</link>
-        <guid isPermaLink="true">https://dpogue.ca/articles/html5-menu.html</guid>
-      </item>
-    
-    
-    
-    
-      <item>
-        <title>cordova-plugin-webp: WebP support for iOS</title>
-        <description><![CDATA[<p><small>Posted on <time pubdate datetime="2014-11-24">November 24<sup>th</sup>, 2014</time></small></p>
+      <pubDate>Wed Mar 04 2015 00:00:00 GMT-0800 (PST)</pubDate>
+      <link>https://dpogue.ca/articles/html5-menu.html</link>
+      <guid isPermaLink="true">https://dpogue.ca/articles/html5-menu.html</guid>
+    </item>
+
+
+
+
+    <item>
+      <title>cordova-plugin-webp: WebP support for iOS</title>
+      <description><![CDATA[<p><small>Posted on <time pubdate datetime="2014-11-24">November 24<sup>th</sup>, 2014</time></small></p>
 <p>Google&#39;s WebP image format can produce some significant savings in image file sizes, particularly for images with transparency that previously required <abbr>PNG</abbr>.  WebP is supported natively in Google Chrome, and on Android 4.0 and higher (although 4.0 and 4.1 had some limitations).</p>
 <p>On mobile, the smaller file sizes mean less network bandwidth and faster image loading.  Several mobile websites are already using device detection to serve WebP images to supported browsers.  For hybrid apps, using WebP for assets means the application bundle is smaller.</p>
 <p>Unfortunately, iOS doesn&#39;t support WebP images.</p>
@@ -314,17 +360,17 @@
 <p>You can add the plugin to your Cordova project using the command-line tools:<br><code>cordova plugin add ca.dpogue.webp</code></p>
 <p>Currently it uses libwebp 0.4.2, and has been tested and verified to work with a <code>UIWebView</code>.  It has not been tested with <code>WkWebView</code> on iOS 8.  If you find bugs, please report them <a href="https://github.com/dpogue/cordova-plugin-webp/issues/">on GitHub</a>.</p>
 ]]></description>
-        <pubDate>Mon Nov 24 2014 00:00:00 GMT-0800 (PST)</pubDate>
-        <link>https://dpogue.ca/articles/webp-ios.html</link>
-        <guid isPermaLink="true">https://dpogue.ca/articles/webp-ios.html</guid>
-      </item>
-    
-    
-    
-    
-      <item>
-        <title>Native Navigation in the Mobile Web World</title>
-        <description><![CDATA[<p><small>Posted on <time pubdate datetime="2014-10-06">October 6<sup>th</sup>, 2014</time></small></p>
+      <pubDate>Mon Nov 24 2014 00:00:00 GMT-0800 (PST)</pubDate>
+      <link>https://dpogue.ca/articles/webp-ios.html</link>
+      <guid isPermaLink="true">https://dpogue.ca/articles/webp-ios.html</guid>
+    </item>
+
+
+
+
+    <item>
+      <title>Native Navigation in the Mobile Web World</title>
+      <description><![CDATA[<p><small>Posted on <time pubdate datetime="2014-10-06">October 6<sup>th</sup>, 2014</time></small></p>
 <p>Much has been written on the subject of web-based mobile apps and how they
 compare to native apps.  Often there&#39;s a lot of unfair prejudice against web
 apps, but one point that consistently stands is related to navigation in web
@@ -470,11 +516,9 @@ no clear guideline on what should be polyfilled and how it should behave.</p>
 developers, and hybrid platform developers what they envision as an ideal
 solution to this problem.  The web improves through discussion.</p>
 ]]></description>
-        <pubDate>Mon Oct 06 2014 01:00:00 GMT-0700 (PDT)</pubDate>
-        <link>https://dpogue.ca/articles/nativenav.html</link>
-        <guid isPermaLink="true">https://dpogue.ca/articles/nativenav.html</guid>
-      </item>
-    
-    
+      <pubDate>Mon Oct 06 2014 01:00:00 GMT-0700 (PDT)</pubDate>
+      <link>https://dpogue.ca/articles/nativenav.html</link>
+      <guid isPermaLink="true">https://dpogue.ca/articles/nativenav.html</guid>
+    </item>
   </channel>
 </rss>
