@@ -3,7 +3,7 @@ layout: article
 title: Reflections on Uru's 20th anniversary
 date: 2023-11-11
 description: Reflections and thanks, for a game that changed my life.
-image: /img/uru-20th-banner.jpg
+image: /img/uru-20th-banner.png
 ---
 <small>Posted on <time pubdate datetime="2023-11-11">November 11<sup>th</sup>, 2023</time></small>
 
