@@ -16,6 +16,7 @@
     <meta name="theme-color" content="#a9a6ad">
     <meta name="view-transition" content="same-origin">
     <meta name="description" itemprop="description" content="<%= page.description %>">
+    <% if (page.image) { %><meta property="og:image" content="<%= page.image %>"><% } %>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">
     <link rel="alternate" href="/feed.xml" type="application/rss+xml" />
