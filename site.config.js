@@ -5,7 +5,7 @@ module.exports = {
     cleanUrls: false
   },
   site: {
-    title:  process.env.npm_package_name,
-    host:   process.env.npm_package_homepage
+    title: 'dpogue.ca',
+    host: 'https://dpogue.ca'
   }
 };
