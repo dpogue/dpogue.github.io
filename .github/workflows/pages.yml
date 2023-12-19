@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 'Setup Node'
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           cache: npm
 
@@ -29,7 +29,7 @@ jobs:
         run: npm run build
 
       - name: 'Upload'
-        uses: actions/upload-pages-artifact@v0.1.0
+        uses: actions/upload-pages-artifact@v2
         with:
           path: www
 
@@ -42,4 +42,4 @@ jobs:
     steps:
       - id: deployment
         name: 'Deploy to GH Pages'
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v3
