@@ -170,3 +170,7 @@ a.profile-icon svg {
     width: 2rem;
     fill: currentColor;
 }
+
+@view-transition {
+  navigation: auto;
+}
