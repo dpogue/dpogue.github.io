@@ -5,6 +5,128 @@
     <link>https://dpogue.ca</link>
     <description>darryl@dpogue.ca</description>
     <atom:link href="http://dpogue.ca/feed.xml" rel="self" type="application/rss+xml" />
+
+    <item>
+      <title>Teaching CMake to Compile Apple Metal Shaders</title>
+      <description><![CDATA[<div><small>Posted on <time pubdate datetime="2024-06-03">June 3<sup>rd</sup>, 2024</time></small></div>
+<blockquote>
+<p>TL;DR: I wrote some CMake helpers to support compiling Metal shaders as part of CMake projects.<br>See <a href="https://github.com/dpogue/CMake-MetalShaderSupport">https://github.com/dpogue/CMake-MetalShaderSupport</a> for details.</p>
+</blockquote>
+<p>As part of <a href="https://www.colincornaby.me/">Colin Cornaby</a>&#39;s work on porting Uru to macOS using the Metal API and Apple&#39;s <a href="https://developer.apple.com/metal/cpp/">metal-cpp</a> wrapper, we&#39;ve found ourselves in a situation where we need to compile a Metal shader library and embed it as a resource in our macOS application bundle. Doing this within Xcode is fairly straightforward: you add a new Metal Shader Library target to your project, stick your shader source files in there, and add it to the embed resources step of your application target.</p>
+<p>However, for Uru&#39;s <a href="https://h-uru.github.io/Plasma/">Plasma engine project</a>, we use CMake to provide a cross-platform build system that allows us to build with Visual Studio, Xcode, Ninja, or <abbr>UNIX</abbr> Makefiles. While Colin had initially figured out a way to make the Metal build process work with the Xcode generator, I was hoping we&#39;d be able to support Ninja and Makefiles on macOS as well.</p>
+<p>The trick for supporting Metal in the Xcode generator was essentially to set a bunch of Xcode-specific attributes on a CMake library target, and then Xcode would automatically handle invoking the Metal compiler and passing all the necessary flags:</p>
+<pre><code>set_target_properties(MyShaders PROPERTIES
+    # Tell Xcode that this is a Metal Shader Library
+    XCODE_PRODUCT_TYPE com.apple.product-type.metal-library
+
+    # Turn on fast math (-ffast-math)
+    # Xcode sets this on Metal Shader Library targets created through the IDE
+    XCODE_ATTRIBUTE_MTL_FAST_MATH &quot;YES&quot;
+
+    # Include source code symbols for debugging in Debug/RelWithDebInfo builds
+    XCODE_ATTRIBUTE_MTL_ENABLE_DEBUG_INFO[variant=Debug] &quot;INCLUDE_SOURCE&quot;
+    XCODE_ATTRIBUTE_MTL_ENABLE_DEBUG_INFO[variant=RelWithDebInfo] &quot;INCLUDE_SOURCE&quot;
+)
+
+# Tell Xcode to treat the source files as Metal language files
+set_source_files_properties(${MyShader_SOURCES}
+    TARGET_DIRECTORY MyShaders
+    PROPERTIES
+    LANGUAGE METAL
+)</code></pre><p>This works fine with the CMake Xcode generator but fails with other generators because they don&#39;t know how to handle source files with the language set to Metal. So to fix this properly, we&#39;ll need to teach CMake how to compile Metal shader files outside of Xcode.</p>
+<h2 id="metal-compiler-tools">Metal Compiler Tools</h2>
+<p>It&#39;s worth noting that Apple does in fact provide command-line tools for compiling Metal shaders, even going as far as to offer an official toolset download bundle for Windows. The Metal compiler tools are based off of LLVM and Clang, <a href="https://medium.com/@samuliak/breaking-down-metals-intermediate-representation-format-41827022489c">outputting LLVM bitcode</a> that gets optimized into a <a href="https://worthdoingbadly.com/metalbitcode/">target-specific compiled shader</a>.</p>
+<p>All of <a href="https://developer.apple.com/library/archive/documentation/Miscellaneous/Conceptual/MetalProgrammingGuide/Dev-Technique/Dev-Technique.html">Apple&#39;s documentation examples</a> for using the command-line tools show a multi-step process like this:</p>
+<pre><code>xcrun -sdk macosx metal MyLibrary.metal -o MyLibrary.air
+xcrun -sdk macosx metal-ar MyLibrary.air -o MyLibrary.metalar
+xcrun -sdk macosx metallib MyLibrary.metalar -o MyLibrary.metallib</code></pre><p>My initial plan was to use CMake&#39;s helpers to find all of those tools, and then use a series of custom target commands to compile each shader. But it definitely would be easier if CMake could understand and use the first tools for Metal files in the first place. Is it possible to teach CMake to understand Metal as a language option?</p>
+<h2 id="enabling-languages-in-cmake">Enabling Languages in CMake</h2>
+<p>CMake defaults to supporting C and C++ by default, but has built-in support for other languages with Objective-C, Objective-C++, <abbr>CUDA</abbr>, <abbr>ISPC</abbr>, Fortran, and Swift. There&#39;s some partial support for C# and Java, but only in specific contexts and with several caveats. CMake provides an <code>enable_language(LANG)</code> function to opt-in to specific languages in a project. The way CMake works is that <code>enable_language(LANG)</code> will try to load some module files to detect the compiler and flag values for that language, and test compiling a program to ensure that the compiler works. In theory, if we provide our own set of CMake module files for Metal, it will load them and run them to detect Metal language support.</p>
+<p>Shoutout at this point to <a href="https://github.com/ppenzin">Petr Penzin</a>, who appears to be <a href="https://cmake.org/pipermail/cmake/2018-November/068662.html">the only other person in the world</a> to have been feeling adventurous enough to actually try adding new custom language support to CMake. 😅</p>
+<p>We need, at minimum, to provide 3 CMake module files with specific names, and 1 file to cache the results:</p>
+<ul>
+<li><code>CMakeDetermineMetalCompiler.cmake</code></li>
+<li><code>CMakeMetalInformation.cmake</code></li>
+<li><code>CMakeTestMetalCompiler.cmake</code><br>and</li>
+<li><code>CMakeMetalCompiler.cmake.in</code></li>
+</ul>
+<p>The first file is responsible for locating the compiler and trying to identify it. This also handles cases like the compiler being manually specified (with the <code>-DCMAKE_Metal_COMPILER</code> option) or provided via a <code>METALC</code> environment variable. In cases like C and C++ identifying the compiler is a complex process due to the sheer number of different compilers available, but for Metal it&#39;s safe to assume we&#39;re only dealing with Apple&#39;s compiler.</p>
+<p>The second file is where language configuration flags and build steps are declared. This needs to tell CMake how to invoke the compiler and which options to pass to it.</p>
+<p>The third file will attempt to invoke the compiler with a test file and ensure that there are no errors.</p>
+<p>Lastly, the results of finding the compiler are cached in the CMakeFiles directory of the project. This ensures that if you&#39;ve pointed to a specific compiler path when configuring the CMake project build, it will keep using the one that you provided for all subsequent builds of that project.</p>
+<p>Knowing that both the Metal compiler and the Swift compiler are based on LLVM and Clang, I put together the minimum viable CMake compiler support for Metal based mostly on copy/pasting code from CMake&#39;s internal Swift support. One of the challenges was identifying the 3 different compiler tools used though, and trying to get CMake to invoke them all at the right times.</p>
+<h2 id="documentions-theory-vs-xcodes-reality">Documention&#39;s Theory vs Xcode&#39;s Reality</h2>
+<p>Based on the documentation examples from Apple, it seems like Metal sources should be able to support some of the common CMake library types. <code>OBJECT</code> libraries would just invoke <code>metal</code> compiler to output <code>.air</code> bitcode files, <code>STATIC</code> libraries would generate <code>.metalar</code> archives using the <code>metal-ar</code> tool, and those could be combined into <code>SHARED</code> or <code>MODULE</code> libraries which would use <code>metallib</code> to create the final <code>.metallib</code> file. I had all of that hooked up and mostly working in CMake.</p>
+<p>Except Xcode doesn&#39;t actually support doing any of that! I could make <code>OBJECT</code> and <code>STATIC</code> libraries work with Makefiles on the command-line, but I couldn&#39;t get Xcode to do the right thing. The only way Xcode knows how to deal with Metal shaders is as their own library target (or as sources in an application target that get compiled to a <code>default.metallib</code> file), it doesn&#39;t provide a built-in way to generate <code>.air</code> or <code>.metalar</code> files and link them as part of another target.</p>
+<p>Looking at the commands that Xcode itself runs for compiling Metal shaders revealed another discrepancy from Apple&#39;s command-line documentation: Xcode doesn&#39;t invoke separate <code>metal</code> and <code>metallib</code> commands to compile and link, it just uses <code>metal</code> as an LLVM frontend to do both steps. Considering this had been one of the sketchier parts of the CMake detection involving multiple tools, I opted to simplify and only support the use case that worked out of the box with the Xcode generator.</p>
+<p>So the end result uses only the <code>metal</code> compiler tool to do both compiling and linking, and is intended to be used with <code>MODULE</code> libraries that output complete <code>.metallib</code> files.</p>
+<h2 id="embedding-shaders-in-a-bundle">Embedding Shaders in a Bundle</h2>
+<p>For the application to actually use the Metal shaders, the <code>.metallib</code> file needs to be included in the application bundle&#39;s Resources folder.</p>
+<p>CMake 3.29 adds an Xcode-specific target property that makes this super easy. Just provide a list of other targets, they will automatically be managed as dependencies of the application target and their output files will be embedded as resources:</p>
+<pre><code>set_target_properties(MyApp PROPERTIES
+    XCODE_EMBED_RESOURCES MyShaders
+)</code></pre><p>For non-Xcode generators and/or older CMake version, they need to be copied manually, which involves a <code>add_custom_command()</code> function call for every shader library that needs to be included. Luckily, CMake has built-in support for copying files and some helpers that mean the commands aren&#39;t <em>too</em> awful:</p>
+<pre><code>add_custom_command(TARGET MyApp POST_BUILD
+    DEPENDS MyShaders
+    COMMAND ${CMAKE_COMMAND} -E copy &quot;$&lt;TARGET_FILE:MyShaders&gt;&quot; &quot;$&lt;TARGET_BUNDLE_CONTENT_DIR:MyApp&gt;/Resources/$&lt;TARGET_FILE_NAME:MyShaders&gt;&quot;
+    VERBATIM
+)</code></pre><h2 id="simplifying-the-boilerplate">Simplifying the Boilerplate</h2>
+<p>So while that all works, and CMake is compiling and embedding Metal shaders, it&#39;s still a lot of boilerplate to set up a shader library target that works both with Xcode and non-Xcode generators, and even worse to get it embedded in the application bundle.</p>
+<p>Thankfully, CMake also provides the ability to declare functions and include them in other projects, so I simplified all the boilerplate by defining <code>add_metal_shader_library(TARGET SOURCES...)</code> and <code>target_embed_metal_shader_libraries(TARGET SHADERLIBS...)</code> helper functions in a <code>MetalShaderSupport</code> module. I also tried to support declaring the Metal Shader Language version on a shader target, and ensuring that works in both Xcode and the command-line.</p>
+<h2 id="the-cmake-metalshadersupport-repository">The CMake MetalShaderSupport Repository</h2>
+<p>Having gotten this working, and noticing comments on StackOverflow from people asking how to build Metal shaders as part of a CMake project, I tried to set this up so that it can easily be included in any CMake project.</p>
+<p>All of the CMake module files, as well as a working example are available at <a href="https://github.com/dpogue/CMake-MetalShaderSupport">https://github.com/dpogue/CMake-MetalShaderSupport</a> along with instructions for including them in your own project. This has only been tested in a very basic macOS example project, so there is probably still more work to do to fully support things like iOS projects and building with the Windows Metal Development Toolset.</p>
+<p>That said, after grumbling about this problem for several months, I&#39;m very happy to see a few days of hacking come together in a useful way.</p>
+]]></description>
+      <pubDate>Mon Jun 03 2024 17:00:00 GMT-0700 (PDT)</pubDate>
+      <link>https://dpogue.ca/articles/cmake-metal.html</link>
+      <guid isPermaLink="true">https://dpogue.ca/articles/cmake-metal.html</guid>
+    </item>
+
+
+    <item>
+      <title>Reflections on Uru's 20th anniversary</title>
+      <description><![CDATA[<div><small>Posted on <time pubdate datetime="2023-11-11">November 11<sup>th</sup>, 2023</time></small></div>
+<p>Today marks the 20<sup>th</sup> anniversary of the release of <em>Uru: Ages Beyond Myst</em>. That game had (and continues to have) a major impact on my life, and I wanted to write a bit about what it has meant to me.</p>
+<figure>
+  <img class="img-center" src="/img/uru-20th-banner.png" alt="Celebrating 20 years of Uru">
+  <figcaption>Celebrating 20 years of Uru &mdash; banner by Patrick "Maurus" Mauro</figcaption>
+</figure>
+
+<h2>Discovering Myst</h2>
+
+<p>I first discovered <em>Myst</em> around the year 2000, at the age of 9 or 10.  My family had a Windows 98 computer which had shipped with a binder full of CD-ROMs ranging from <em>Reader Rabbit</em> and <em>CorelDRAW</em> to <em>The Journeyman Project 3</em>. <em>Myst</em> was one of the games in that binder, and my uncle had said good things about it.</p>
+<p>I was hooked. There was something about those eerie, solitary, surreal worlds that captivated me.</p>
+<p>I also got stuck, particularly on the Selenetic maze-runner, which eventually led me to searching on the Internet and finding a fansite with hints. That site led me to learn about Riven, Myst 3, and Mudpie.</p>
+<p>After completing <em>Myst</em>, I begged my parents for <em>Riven</em>, and eventually <em>Exile</em> (although our Windows 98 computer didn&#39;t have a graphics card that could run it). I read all three Myst novels, and played through fan projects like D&#39;ni Legacy. There were lots of fan websites with &quot;explorable&quot; Ages built with <abbr>HTML</abbr> imagemaps and 3D renders from tools like Bryce. I would dream about the kinds of worlds that I would write a Linking Book to if given the chance.</p>
+<h2>Uru, too late</h2>
+
+<p>I got the boxed disc for <em>Uru: Ages Beyond Myst</em> for my birthday in April 2004, and after playing a bit discovered that the online Uru Live portion had been cancelled. However I learned online about the <em>To D&#39;ni</em> expansion, and the upcoming <em>Path of the Shell</em>. I also found a news item on the Guild of Greeters website about a flymode hack, which intrigued me enough to go looking for it. That led me to a website called COBBS, and a group of people calling themselves H&#39;uru (for &quot;Hacking Uru&quot;).</p>
+<p>The H&#39;uru folks had reverse engineered some of the game&#39;s data files, allowing for things like custom Python scripting and turning on/off SDL variables. Initially the goal was to explore the content that had been intended for the cancelled online story, but as tools became more advanced it took the form of texture swapping and digging deeper into the data structure for things like mesh data and colliders.</p>
+<p>I was, at the time, someone who had learned some <abbr>HTML</abbr> and bought a single book on C/C++ programming that left me very confused. But the work the H&#39;uru team was doing was interesting, and I slowly worked my way up from looking at data in a hex editor to reading C# code and eventually to writing a plugin for the PRPExplorer application. The H&#39;uru developers were friendly and helpful, and I started hanging out in their <abbr>IRC</abbr> channel and learning more about both Uru&#39;s Plasma engine and about programming. I owe a lot to those folks who were very supportive of a kid just learning programming and trying to jump in the deep end.</p>
+<p>Although I&#39;d been interested in computer programming for a while, it&#39;s because of Uru that I actually picked up C# and started coding. I also learned some Python from both the game scripting and the ongoing pyprp Blender plugin for creating Uru content. Finally the dream of building and exploring my own Ages was becoming possible (to a certain extent).</p>
+<h2>CyanChat &amp; community</h2>
+
+<p>After a year or so of hanging out in the H&#39;uru <abbr>IRC</abbr> channels, and when the GameTap Uru-revival beta was starting in 2006, I started also hanging out in the CyanChat room. This was a Cyan&#39;s official chat room, built with Java Applets and using a custom ASCII protocol, but there were a few 3rd party chat clients available.</p>
+<p>In addition to introducing me to a great group of people, CyanChat also gave me another opportunity to explore programming and software development. Writing my own CyanChat client was my first introduction to the idea of sockets, and I wrote or contributed to chat clients written in C#, Python, Perl, Ruby, C/C++, and JavaScript over the years. I wrote a CyanChat plugin for the open-source Pidgin messenger at one point, and started following the open-source development on that project. I can&#39;t say there&#39;s a definite correlation, but I will say that I haven&#39;t picked up any new programming languages since CyanChat shut down. Coincidence?</p>
+<p>I&#39;ve <a href="https://mystonline.com/forums/viewtopic.php?p=402386#p402386">written a little bit previously</a> about the personal impact of CyanChat and that group of people on my life. I&#39;m incredibly thankful to have been in the right place at the right time to meet such supportive friends while going through high school and university. It was great to finally attend the Mysterium convention this year and meet some of them in person.</p>
+<h2>Developing as a developer</h2>
+
+<p>Nearing the end of high school in 2009, I knew that software development was something I wanted to explore further as a career. I was heavily involved in managing my school website at the time, and learning Linux and system administration skills, while also working on Uru tools with libHSPlasma. I had an advantage in university because I already understood a lot of the concepts in programming, and I had a long list of projects and open-source contributions on my résumé when applying for co-op internship positions.</p>
+<p>It&#39;s because of that experience that I was hired at Ayogo, where I&#39;ve worked for over a decade, and where jumping between languages and diving into unfamiliar code to troubleshoot has been an extremely useful skill.</p>
+<p>Almost all the development work on Uru tools has been open-source with a distributed team, relying on <abbr>IRC</abbr> (and more recently also Discord) for coordination. That style of collaborative development and comfort with open-source communities has led me to contribute to numerous other projects, including Apache Cordova, and opened up countless opportunities for me.</p>
+<h2>Giving thanks</h2>
+
+<p>I wouldn&#39;t be the person I am today, or have the skills and experience or career that I do today, without Uru. So many of the things in my life can be directly traced back to this game.</p>
+<p>I owe thanks to the H&#39;uru folks (many of whom are no longer active) for the encouragement and mentorship when starting on my coding journey, to the Uru community for keeping the game going all these years. A special shout-out to Cyan&#39;s Mark DeForest as well: Back around early 2008 I sent him an email asking a technical question about how something in Uru worked, with the goal of implementing that feature in the pyprp Blender plugin. He replied with a full explanation of the feature and some recommendations for exposing it to artists, and it meant so much to me that he took the time to respond and offer encouragement to me as a 16-year-old emailing out of the blue.</p>
+<p>I&#39;m not one to predict the future, but there is some exciting work happening in the open-source Uru codebase that I hope people will get to experience soon. I continue to work (at the speed of molasses) on the Linux and OpenGL port, and that project is yet another example of how this game pushes me to pick up new skills and experience.</p>
+]]></description>
+      <pubDate>Sat Nov 11 2023 17:00:00 GMT-0700 (PDT)</pubDate>
+      <link>https://dpogue.ca/articles/uru-20th-reflections.html</link>
+      <guid isPermaLink="true">https://dpogue.ca/articles/uru-20th-reflections.html</guid>
+    </item>
+
+
     <item>
       <title>Uru on Linux/OpenGL: 2023 update</title>
       <description><![CDATA[<div><small>Posted on <time pubdate datetime="2023-06-18">June 18<sup>th</sup>, 2023</time></small></div>
