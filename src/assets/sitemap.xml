@@ -3,7 +3,12 @@
 <url>
     <loc>https://dpogue.ca/</loc>
     <changefreq>weekly</changefreq>
-    <lastmod>2016-09-23T07:19:59.471Z</lastmod>
+    <lastmod>2024-06-03T00:00:00.000Z</lastmod>
+</url>
+<url>
+    <loc>https://dpogue.ca/articles/cmake-metal.html</loc>
+    <changefreq>weekly</changefreq>
+    <lastmod>2024-06-03T00:00:00.000Z</lastmod>
 </url>
 <url>
     <loc>https://dpogue.ca/articles/cordova-xcode8.html</loc>
@@ -39,6 +44,11 @@
     <loc>https://dpogue.ca/articles/seymour.html</loc>
     <changefreq>weekly</changefreq>
     <lastmod>2015-11-16T00:00:00.000Z</lastmod>
+</url>
+<url>
+    <loc>https://dpogue.ca/articles/uru-20th-reflections.html</loc>
+    <changefreq>weekly</changefreq>
+    <lastmod>2023-11-11T00:00:00.000Z</lastmod>
 </url>
 <url>
     <loc>https://dpogue.ca/articles/webp-ios.html</loc>
