@@ -131,7 +131,7 @@ div.profile {
 }
 
 
-div.profile figure {
+div.profile div.photo {
     float: right;
     order: 2;
     padding: 0;
@@ -144,7 +144,7 @@ div.profile figure {
     background: none;
 }
 
-div.profile figure img {
+div.profile div.photo img {
     display: block;
     border-radius: 0.25rem;
 }
