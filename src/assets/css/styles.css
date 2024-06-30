@@ -17,8 +17,24 @@ header h1 {
     top: 0;
 }
 
+.fallback-banner {
+    background: #a9a6ad;
+    border: 0 none;
+    margin: -8px -8px 0px -8px;
+}
+
+.page-title a {
+    text-decoration: none;
+}
+
+
+/* Undo margin hack for non-Netscape Navigator 4 */
+html .fallback-banner {
+    margin: 0;
+}
+
 pre, code, kbd, tt {
-    font-family: 'Roboto Mono', 'Droid Sans Mono', 'Consolas', 'Menlo', 'Lucida Console', 'Monaco', monospace;
+    font-family: system-ui-mono, 'Roboto Mono', 'Droid Sans Mono', 'Consolas', 'Menlo', 'Lucida Console', 'Monaco', monospace;
 }
 
 pre {
