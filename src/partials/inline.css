@@ -1,6 +1,7 @@
 @font-face {
     font-family: dpogue;
     font-display: fallback;
+    font-weight: 600;
     src: url(/fonts/dpogue.woff2) format("woff2"), url(/fonts/dpogue.woff) format("woff");
 }
 
@@ -10,10 +11,15 @@ body {
     padding: 0;
     font: -apple-system-body;
     font-family: system-ui, sans-serif;
+    color: #cacace;
     background: #2d2b36;
     background-image: linear-gradient(to bottom, #2d2b36, #2d2b36, #1a1c28);
     min-height: 100%;
     min-height: 100vh;
+}
+
+a {
+    color: #f7ba84;
 }
 
 header {
@@ -27,11 +33,19 @@ header {
 header h1 {
     margin: 0 0 -3em 0;
     margin: 0 0 -3rem 0;
-    font-family: dpogue, monospace;
+    font-family: dpogue, ui-monospace, Menlo, Consolas, monospace;
     text-align: right;
-    padding: 2em 3em 1em 0;
-    padding: 2rem 3rem 1rem 0;
+    padding: 1em 2em 2em 0;
+    padding: 1rem 2rem 2rem 0;
     position: relative;
+    font-weight: 600;
+}
+
+@media screen and (min-width: 460px) {
+    header h1 {
+        padding: 2em 3em 1em 0;
+        padding: 2rem 3rem 1rem 0;
+    }
 }
 
 header h1 a {
@@ -46,6 +60,7 @@ header img {
     width: 100%;
     display: block;
     overflow: hidden;
+    min-height: 10vw;
 }
 
 main {
@@ -56,6 +71,7 @@ main {
     width: calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     max-width: 960px;
     margin: 0 auto;
+    padding-top: 1px;
 }
 
 h1 {
@@ -76,7 +92,8 @@ article, section {
     line-height: 1.5;
 }
 
-a {
+article a,
+section a {
     color: #474658;
 }
 
