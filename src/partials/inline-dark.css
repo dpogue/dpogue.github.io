@@ -5,6 +5,7 @@ article, section {
     border-color: rgba(0, 0, 0, 0.1);
 }
 
-a {
+article a,
+section a {
     color: #f7ba84;
 }
