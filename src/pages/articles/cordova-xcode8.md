@@ -29,7 +29,7 @@ Cordova Support
 
 ### Development Team
 
-Cordova-iOS 3.4.0 allows specifying a `developmentTeam` in build.json, which will be used to populate the `DEVELOPMENT_TEAM` setting.  You do not need the hook if you're using Cordova-iOS 4.3.0.
+Cordova-iOS 4.3.0 allows specifying a `developmentTeam` in build.json, which will be used to populate the `DEVELOPMENT_TEAM` setting.  You do not need the hook if you're using Cordova-iOS 4.3.0.
 
 If you're using an older version, I've [written a hook](https://gist.github.com/dpogue/186b6c1827363c48d644b0d59e91bc28) that you can add to your project. Save that file in your hooks folder, and reference it in your config.xml:
 
