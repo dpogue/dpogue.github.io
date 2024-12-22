@@ -93,7 +93,6 @@ h1 {
 main h1 {
     display: inline-block;
     text-align: left;
-    text-align: start;
     width: 100%;
     box-sizing: border-box;
 }
@@ -111,7 +110,6 @@ article, section {
     border: 0.5px solid rgba(255, 255, 255, 0.5);
     line-height: 1.5;
     text-align: left;
-    text-align: start;
     box-sizing: border-box;
 }
 .iearticle a,
