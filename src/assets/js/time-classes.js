@@ -1,3 +1,3 @@
-if (document.body.classList) {
+if (!!document.body && !!document.body.classList) {
     document.body.classList.add("date-" + (new Date()).toISOString().substr(0, 10));
 }
