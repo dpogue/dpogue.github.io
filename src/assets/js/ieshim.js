@@ -1,9 +1,3 @@
-document.createElement('header');
-document.createElement('main');
-document.createElement('article');
-document.createElement('section');
-document.createElement('footer');
-
 function fixElementsOfType(type) {
     var blockStart, blockEnd, newBlock, elems;
 
@@ -71,10 +65,18 @@ function fixElementsOfType(type) {
     }
 }
 
-window.onload = function() {
-    fixElementsOfType('HEADER');
-    fixElementsOfType('MAIN');
-    fixElementsOfType('ARTICLE');
-    fixElementsOfType('SECTION');
-    fixElementsOfType('FOOTER');
-};
+if (document.createElement && typeof(HTMLHeaderElement) === "undefined") {
+    document.createElement('header');
+    document.createElement('main');
+    document.createElement('article');
+    document.createElement('section');
+    document.createElement('footer');
+
+    window.onload = function() {
+        fixElementsOfType('HEADER');
+        fixElementsOfType('MAIN');
+        fixElementsOfType('ARTICLE');
+        fixElementsOfType('SECTION');
+        fixElementsOfType('FOOTER');
+    };
+}
