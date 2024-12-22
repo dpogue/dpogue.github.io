@@ -33,6 +33,16 @@ html .fallback-banner {
     margin: 0;
 }
 
+body {
+    background-image: -webkit-linear-gradient(#2d2b36, #2d2b36, #1a1c28);
+    background-image: linear-gradient(to bottom, #2d2b36, #2d2b36, #1a1c28);
+}
+
+header {
+    background-image: -webkit-linear-gradient(#a9a6ad, #f7ba84 99%, #2d2b36);
+    background-image: linear-gradient(to bottom, #a9a6ad, #f7ba84 99%, #2d2b36);
+}
+
 pre, code, kbd, tt {
     font-family: system-ui-mono, 'Roboto Mono', 'Droid Sans Mono', 'Consolas', 'Menlo', 'Lucida Console', 'Monaco', monospace;
 }
@@ -41,6 +51,7 @@ pre {
     padding: 5px;
     border: 0.5px solid #474658;
     overflow-x: auto;
+    max-width: 100%;
 }
 
 code, tt {
@@ -58,13 +69,17 @@ strong {
 
 ul {
     margin: 0;
+    padding-left: 40px;
+    padding-inline: 40px 0;
 }
 
 ul.bullets-none {
     list-style-type: none;
     padding-left: 0;
+    padding-inline: 0;
 }
 
+.iearticle.floating, .iesection.floating,
 article.floating, section.floating {
     border-radius: 0.25rem;
 }
@@ -135,14 +150,14 @@ hr {
 }
 
 div.profile {
-    display: flex;
     margin: 1em 0;
     margin: 1rem 0;
+    gap: 1rem;
 }
 
-@media (max-width: 600px) {
+@media (min-width: 600px) {
     div.profile {
-        display: block;
+        display: flex;
     }
 }
 
@@ -152,11 +167,10 @@ div.profile div.photo {
     order: 2;
     padding: 0;
     margin: 0;
-    margin-left: 1em;
-    margin-left: 1rem;
-    width: 33%;
+    width: 316px;
+    max-width: 33%;
     flex-shrink: 0;
-    display: inline-block;
+    display: block;
     background: none;
 }
 
@@ -165,8 +179,11 @@ div.profile div.photo img {
     border-radius: 0.25rem;
 }
 
+div.profile .iesection,
 div.profile section {
     flex: 1 1 auto;
+    display: block;
+    width: auto;
 }
 
 a.profile-icon {
