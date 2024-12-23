@@ -152,13 +152,6 @@ hr {
 div.profile {
     margin: 1em 0;
     margin: 1rem 0;
-    gap: 1rem;
-}
-
-@media (min-width: 600px) {
-    div.profile {
-        display: flex;
-    }
 }
 
 
@@ -172,6 +165,14 @@ div.profile div.photo {
     flex-shrink: 0;
     display: block;
     background: none;
+    margin-left: 2%;
+    margin-left: 1rem;
+}
+
+@media (min-width: 600px) {
+    div.profile {
+        display: flex;
+    }
 }
 
 div.profile div.photo img {
@@ -182,8 +183,27 @@ div.profile div.photo img {
 div.profile .iesection,
 div.profile section {
     flex: 1 1 auto;
-    display: block;
-    width: auto;
+    display: inline-block;
+    width: 65%;
+    padding: 0;
+}
+
+div.profile .iesection > *,
+div.profile section > * {
+    margin: 1em;
+    margin: 1rem;
+}
+
+@media (max-width: 600px) {
+    div.profile section {
+        width: auto;
+        display: block;
+    }
+}
+
+.iefooter,
+footer {
+    clear: both;
 }
 
 a.profile-icon {
