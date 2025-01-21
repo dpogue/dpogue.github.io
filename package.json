@@ -10,7 +10,7 @@
   "main": "site.config.js",
   "dependencies": {},
   "devDependencies": {
-    "nanogen": "dpogue/nanogen#deps"
+    "nanogen": "^0.4.4"
   },
   "scripts": {
     "start": "nanogen start",
