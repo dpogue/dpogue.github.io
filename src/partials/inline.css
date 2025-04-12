@@ -70,6 +70,10 @@ header svg {
     height: 21%;
 }
 
+#fallback-header-gradient {
+    display: none;
+}
+
 .iemain,
 main {
     display: block;
@@ -126,4 +130,5 @@ footer {
     color: #f7ba84;
     font-size: smaller;
     padding-bottom: 0.5em;
+    padding-bottom: calc(0.5em + env(safe-area-inset-bottom, 0px));
 }
