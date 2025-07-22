@@ -228,6 +228,19 @@ a.profile-icon svg {
   navigation: auto;
 }
 
+/* Scroll animation to mask iOS 26 scroll pocket body background colour */
+@keyframes background-colour-scroll {
+    0% { background-color: #a9a6ad; }
+    6% { background-color: #a9a6ad; }
+    7% { background-color: #2d2b36; }
+    100% { background-color: #1a1c28; }
+}
+
+body {
+    animation: background-colour-scroll auto linear;
+    animation-timeline: scroll();
+}
+
 /* Header for the month of June */
 body[class*="date-"][class*="-06-"] header {
     background-image:
