@@ -4,9 +4,8 @@ title: Understanding the WebView Viewport in iOS 11
 date: 2017-09-13
 description: iOS 11 changes behaviour around how the status bar interacts with the WebView. Let's learn about viewport-fit and safe-area-inset constants.
 image: /img/ios11-banner.jpg
-canonical: https://ayogo.com/blog/ios11-viewport/
 ---
-<small>Posted to <a href="https://ayogo.com/blog/ios11-viewport">the Ayogo blog</a> on <time pubdate datetime="2017-09-13">September 13<sup>th</sup>, 2017</time>.<br>Updated on <time datetime="2017-10-31">October 31<sup>st</sup>, 2017</time>.</small>
+<small>Posted on <time pubdate datetime="2017-09-13">September 13<sup>th</sup>, 2017</time>.<br>Updated on <time datetime="2017-10-31">October 31<sup>st</sup>, 2017</time>.</small>
 
 iOS 11 brings some new, perhaps unintuitive, behaviour around the status bar area which will be particularly important for developers using tools like Apache Cordova or Ionic.  In particular, this change in behaviour affects any web-based apps that use fixed position header bars when they are built for iOS 11.
 
