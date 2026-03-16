@@ -24,7 +24,8 @@
     <% if (page.image) { %><meta property="og:image" content="<%= site.host %><%= page.image %>"><% } %>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">
-    <link rel="alternate" href="/feed.xml" type="application/rss+xml" />
+    <link rel="alternate" href="/feed.xml" type="application/rss+xml">
+    <link rel="human-json" href="/.well-known/human.json">
     <% if (page.canonical) { %><link rel="canonical" itemprop="mainEntityOfPage" href="<%= page.canonical %>"><% } %>
   </head>
   <body bgcolor="#2d2b36" text="#cacace" link="#f7ba84" vlink="#f7ba84" marginheight="0" marginwidth="0">
