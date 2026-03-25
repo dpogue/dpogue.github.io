@@ -34,13 +34,40 @@ html .fallback-banner {
 }
 
 body {
-    background-image: -webkit-linear-gradient(#2d2b36, #2d2b36, #1a1c28);
-    background-image: linear-gradient(to bottom, #2d2b36, #2d2b36, #1a1c28);
+    background: #1a1c28 -webkit-linear-gradient(#2d2b36, #2d2b36, #1a1c28);
+    background: #1a1c28 linear-gradient(to bottom, #2d2b36, #2d2b36, #1a1c28);
 }
 
 header {
     background-image: -webkit-linear-gradient(#a9a6ad, #f7ba84 99%, #2d2b36);
     background-image: linear-gradient(to bottom, #a9a6ad, #f7ba84 99%, #2d2b36);
+}
+
+/* Hacks for iOS Safari with Liquid Glass not extending the header into the safe area at the top */
+@supports (animation-timeline: scroll()) {
+    @keyframes headerhack {
+        0% {
+            background: #a9a6ad;
+        }
+
+        2%,
+        100% {
+            background: transparent;
+        }
+    }
+
+    header::before {
+        content: '';
+        display: block;
+        position: fixed;
+        height: 5vw;
+        width: 100vw;
+        top: 0;
+        background: #a9a6ad;
+        z-index: -1;
+        animation: headerhack linear;
+        animation-timeline: scroll();
+    }
 }
 
 pre, code, kbd, tt {
