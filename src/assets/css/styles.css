@@ -180,7 +180,7 @@ div.profile {
 }
 
 
-div.profile div.photo {
+div.profile p.photo {
     float: right;
     order: 2;
     padding: 0;
@@ -200,7 +200,7 @@ div.profile div.photo {
     }
 }
 
-div.profile div.photo img {
+div.profile p.photo img {
     display: block;
     border-radius: 0.25rem;
 }
