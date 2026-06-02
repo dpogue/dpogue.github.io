@@ -72,11 +72,19 @@ if (document.createElement && typeof(HTMLHeaderElement) === "undefined") {
     document.createElement('section');
     document.createElement('footer');
 
-    window.onload = function() {
+    function fixup() {
         fixElementsOfType('HEADER');
         fixElementsOfType('MAIN');
         fixElementsOfType('ARTICLE');
         fixElementsOfType('SECTION');
         fixElementsOfType('FOOTER');
-    };
+    }
+
+    if (window.attachEvent) {
+        window.attachEvent("onload", fixup);
+    } else if ("onload" in window) {
+        window.onload = fixup;
+    } else if ("onLoad" in window) {
+        window.onLoad = fixup;
+    }
 }
