@@ -82,9 +82,9 @@ if (document.createElement && typeof(HTMLHeaderElement) === "undefined") {
 
     if (window.attachEvent) {
         window.attachEvent("onload", fixup);
-    } else if ("onload" in window) {
-        window.onload = fixup;
-    } else if ("onLoad" in window) {
+    } else if (typeof(window.onLoad) === "function") {
         window.onLoad = fixup;
+    } else {
+        window.onload = fixup;
     }
 }
