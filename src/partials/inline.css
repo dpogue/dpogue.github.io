@@ -1,7 +1,7 @@
 @font-face {
     font-family: dpogue;
-    font-display: fallback;
-    font-weight: 600;
+    font-display: swap;
+    font-weight: 400;
     src: url(/fonts/dpogue.woff2) format("woff2"), url(/fonts/dpogue.woff) format("woff");
 }
 
@@ -39,7 +39,8 @@ header h1 {
     padding: 1rem 2rem 0 0;
     position: relative;
     z-index: 1;
-    font-weight: 600;
+    font-weight: 400;
+    font-optical-sizing: none;
 }
 
 @media screen and (min-width: 460px) {
