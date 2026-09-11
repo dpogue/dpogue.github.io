@@ -43,6 +43,35 @@ header {
     background-image: linear-gradient(to bottom, #a9a6ad, #f7ba84 99%, #2d2b36);
 }
 
+/* Parallax for the mountains in the header */
+@supports (animation-timeline: view()) {
+    @property --timeline-value {
+        syntax: "<percentage>";
+        inherits: true;
+        initial-value: 0%;
+    }
+
+    @keyframes parallax {
+        0% {
+            --timeline-value: 0%;
+        }
+
+        20% {
+            --timeline-value: 0%;
+        }
+
+        100% {
+            --timeline-value: 100%;
+        }
+    }
+
+    header {
+        animation: parallax 1ms linear;
+        animation-timeline: view(block);
+        animation-range: exit-crossing 0% exit-crossing 100%;
+    }
+}
+
 /* Hacks for iOS Safari with Liquid Glass not extending the header into the safe area at the top */
 @supports (animation-timeline: scroll()) {
     @keyframes headerhack {
@@ -65,7 +94,7 @@ header {
         top: 0;
         background: #a9a6ad;
         z-index: -1;
-        animation: headerhack linear;
+        animation: headerhack 1ms linear;
         animation-timeline: scroll();
     }
 }
